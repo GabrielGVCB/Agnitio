@@ -35,18 +35,27 @@ agnitio/
 ## Comandos Rápidos
 
 ```bash
-# Iniciar a infraestrutura local (Postgres, RabbitMQ, Redis, MinIO)
+# Iniciar a infraestrutura local (Postgres, RabbitMQ, Redis, MinIO, Prometheus, Tempo, Loki, Grafana)
 docker compose up -d
 
 # Compilar e rodar todos os testes do backend (incluindo ArchUnit e Testcontainers)
 cd backend && ./mvnw verify
 ```
 
+### Portais e Ferramentas Locais
+
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Grafana (Dashboards, Logs & Traces)**: [http://localhost:3001](http://localhost:3001) (admin/admin)
+- **Prometheus (Métricas)**: [http://localhost:9090](http://localhost:9090)
+- **MinIO Console (S3 Storage)**: [http://localhost:9001](http://localhost:9001) (minio_admin/minio_secret_key)
+- **RabbitMQ Management**: [http://localhost:15673](http://localhost:15673) (agnitio_rabbit/rabbit_secret)
+
 ## Documentação Adicional
 
 - [Arquitetura Geral](docs/architecture.md)
 - [ADR 0001: Fundação e Clean Architecture](docs/adr/0001-foundation-and-architecture.md)
 - [ADR 0002: Armazenamento S3 Local com MinIO e Alternativas](docs/adr/0002-s3-local-storage-minio.md)
+- [ADR 0003: Arquitetura de Observabilidade Distribuída](docs/adr/0003-observability-stack.md)
 - [Contratos de Mensagens Assíncronas](docs/contracts/README.md)
 
 ## Licença

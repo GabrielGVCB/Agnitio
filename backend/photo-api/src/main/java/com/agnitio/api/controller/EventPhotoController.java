@@ -17,6 +17,8 @@ import com.agnitio.domain.photo.Photo;
 import com.agnitio.domain.photo.PhotoId;
 import com.agnitio.domain.photographer.InvalidCredentialsException;
 import com.agnitio.domain.photographer.PhotographerId;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -39,15 +41,20 @@ public class EventPhotoController {
     private final RequestUploadUrlsUseCase requestUploadUrlsUseCase;
     private final ConfirmPhotoUploadUseCase confirmPhotoUploadUseCase;
     private final ListEventPhotosUseCase listEventPhotosUseCase;
+    private final Counter uploadConfirmedCounter;
 
     public EventPhotoController(
             RequestUploadUrlsUseCase requestUploadUrlsUseCase,
             ConfirmPhotoUploadUseCase confirmPhotoUploadUseCase,
-            ListEventPhotosUseCase listEventPhotosUseCase
+            ListEventPhotosUseCase listEventPhotosUseCase,
+            MeterRegistry meterRegistry
     ) {
         this.requestUploadUrlsUseCase = Objects.requireNonNull(requestUploadUrlsUseCase, "requestUploadUrlsUseCase must not be null");
         this.confirmPhotoUploadUseCase = Objects.requireNonNull(confirmPhotoUploadUseCase, "confirmPhotoUploadUseCase must not be null");
         this.listEventPhotosUseCase = Objects.requireNonNull(listEventPhotosUseCase, "listEventPhotosUseCase must not be null");
+        this.uploadConfirmedCounter = Counter.builder("photo.upload.confirmed.total")
+                .description("Total number of photo uploads confirmed")
+                .register(meterRegistry);
     }
 
     @PostMapping("/upload-urls")
@@ -94,6 +101,7 @@ public class EventPhotoController {
         );
 
         List<Photo> confirmedPhotos = confirmPhotoUploadUseCase.execute(command);
+        uploadConfirmedCounter.increment(confirmedPhotos.size());
         List<UUID> confirmedUuids = confirmedPhotos.stream()
                 .map(photo -> photo.getId().value())
                 .toList();
