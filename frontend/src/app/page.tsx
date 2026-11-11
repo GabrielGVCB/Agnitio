@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Camera, Search, ShieldCheck, Zap, Lock, Film, Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
+import SelfieSearchModal from '@/components/SelfieSearchModal';
+import { api, EventDto } from '@/lib/api';
 
 export default function HomePage() {
   const [seconds, setSeconds] = useState(0);
@@ -11,6 +13,24 @@ export default function HomePage() {
   const [flashActive, setFlashActive] = useState(false);
   const [consentError, setConsentError] = useState(false);
   const [focusLocked, setFocusLocked] = useState(false);
+  const [isSelfieModalOpen, setIsSelfieModalOpen] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string>('');
+  const [selectedEventName, setSelectedEventName] = useState<string>('');
+  const [realEvents, setRealEvents] = useState<EventDto[]>([]);
+
+  useEffect(() => {
+    api.events.list()
+      .then((events) => {
+        if (events && events.length > 0) {
+          setRealEvents(events);
+          setSelectedEventId(events[0].id);
+          setSelectedEventName(events[0].name);
+        }
+      })
+      .catch(() => {
+        // Fallback for public browsing
+      });
+  }, []);
 
   // Timecode counter for the HUD: 00:00:00
   useEffect(() => {
@@ -42,11 +62,19 @@ export default function HomePage() {
     }
     setConsentError(false);
     setFlashActive(true);
+
+    if (searchQuery.trim() && realEvents.length > 0) {
+      const match = realEvents.find(e => e.name.toLowerCase().includes(searchQuery.toLowerCase().trim()));
+      if (match) {
+        setSelectedEventId(match.id);
+        setSelectedEventName(match.name);
+      }
+    }
+
     setTimeout(() => {
       setFlashActive(false);
-      // Trigger camera search flow or redirect to event search
-      alert(`[AF-C CAPTURA]: Iniciando prova de vida e busca facial para "${searchQuery || 'Todos os Eventos'}"`);
-    }, 500);
+      setIsSelfieModalOpen(true);
+    }, 300);
   };
 
   const sampleEvents = [
@@ -532,6 +560,15 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* AF-C Biometric Face Search Modal */}
+      <SelfieSearchModal
+        isOpen={isSelfieModalOpen}
+        onClose={() => setIsSelfieModalOpen(false)}
+        eventId={selectedEventId || (realEvents[0]?.id ?? '')}
+        eventName={selectedEventName || (realEvents[0]?.name ?? 'Evento')}
+        initialConsent={consentChecked}
+      />
     </div>
   );
 }

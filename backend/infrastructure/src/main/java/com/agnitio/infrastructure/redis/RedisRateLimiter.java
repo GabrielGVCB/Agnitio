@@ -1,5 +1,6 @@
 package com.agnitio.infrastructure.redis;
 
+import com.agnitio.application.ports.output.RateLimiterPort;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
@@ -7,7 +8,7 @@ import java.time.Duration;
 import java.util.Objects;
 
 @Component
-public class RedisRateLimiter {
+public class RedisRateLimiter implements RateLimiterPort {
 
     private static final String RATE_LIMIT_PREFIX = "ratelimit:";
 

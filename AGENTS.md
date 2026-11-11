@@ -200,7 +200,7 @@ cd frontend && npm run dev           # frontend local
 5. **Observabilidade**: OpenTelemetry, Grafana, Loki, Prometheus, Tempo.
 6. **Reconhecimento facial**: vision-service, indexação com pgvector, busca por selfie com consentimento.
 
-**Fase atual: 5 — Observabilidade (Concluída).** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
+**Fase atual: 6 — Reconhecimento facial (Concluída).** Todas as fases do roteiro inicial foram concluídas com sucesso.
 
 ## Como trabalhar neste repositório
 

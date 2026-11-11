@@ -118,6 +118,19 @@ export interface EventGalleryResponse {
   photos: PhotoGalleryItem[];
 }
 
+export interface SelfieMatchItem {
+  photoId: string;
+  previewUrl: string;
+  thumbnailUrl: string;
+  similarity: number;
+}
+
+export interface SearchSelfieResponse {
+  eventId: string;
+  totalMatches: number;
+  matches: SelfieMatchItem[];
+}
+
 export interface EventProgressDto {
   total: number;
   processed: number;
@@ -220,6 +233,31 @@ export const api = {
 
     async getProgress(eventId: string) {
       return fetchClient<EventProgressDto>(`/events/${eventId}/progress/status`);
+    },
+
+    async searchBySelfie(eventId: string, file: File | Blob, consent: boolean): Promise<SearchSelfieResponse> {
+      const formData = new FormData();
+      formData.append('selfie', file, 'selfie.jpg');
+      formData.append('consent', String(consent));
+
+      const response = await fetch(`${API_BASE}/events/${eventId}/photos/search-by-selfie`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}`;
+        try {
+          const errJson = await response.json();
+          errorMessage = errJson.message || errJson.error || errorMessage;
+        } catch {
+          // ignore
+        }
+        throw new Error(errorMessage);
+      }
+
+      return response.json();
     },
 
     getProgressEventSourceUrl(eventId: string): string {

@@ -2,10 +2,12 @@ package com.agnitio.api.config;
 
 import com.agnitio.application.ports.output.EventPublisher;
 import com.agnitio.application.ports.output.EventRepository;
+import com.agnitio.application.ports.output.FaceSearchClient;
 import com.agnitio.application.ports.output.PasswordEncoderPort;
 import com.agnitio.application.ports.output.PhotoProgressTracker;
 import com.agnitio.application.ports.output.PhotoRepository;
 import com.agnitio.application.ports.output.PhotographerRepository;
+import com.agnitio.application.ports.output.RateLimiterPort;
 import com.agnitio.application.ports.output.RefreshTokenStorage;
 import com.agnitio.application.ports.output.TokenService;
 import com.agnitio.application.usecase.auth.AuthenticatePhotographerUseCase;
@@ -22,6 +24,7 @@ import com.agnitio.application.usecase.photo.ConfirmPhotoUploadUseCase;
 import com.agnitio.application.usecase.photo.ListEventPhotosUseCase;
 import com.agnitio.application.usecase.photo.RegisterUploadedPhotoUseCase;
 import com.agnitio.application.usecase.photo.RequestUploadUrlsUseCase;
+import com.agnitio.application.usecase.photo.SearchPhotosBySelfieUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -137,5 +140,15 @@ public class ApplicationConfig {
             PhotoStorage photoStorage
     ) {
         return new ListEventPhotosUseCase(eventRepository, photoRepository, photoStorage);
+    }
+
+    @Bean
+    public SearchPhotosBySelfieUseCase searchPhotosBySelfieUseCase(
+            FaceSearchClient faceSearchClient,
+            PhotoRepository photoRepository,
+            PhotoStorage photoStorage,
+            RateLimiterPort rateLimiter
+    ) {
+        return new SearchPhotosBySelfieUseCase(faceSearchClient, photoRepository, photoStorage, rateLimiter);
     }
 }

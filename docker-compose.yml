@@ -37,6 +37,37 @@ services:
       retries: 5
       start_period: 10s
 
+  vision-service:
+    build:
+      context: ./vision-service
+      dockerfile: Dockerfile
+    container_name: agnitio-vision-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_VISION_HOST: postgres-vision
+      POSTGRES_VISION_PORT: 5432
+      POSTGRES_VISION_DB: ${POSTGRES_VISION_DB:-agnitio_vision}
+      POSTGRES_VISION_USER: ${POSTGRES_VISION_USER:-vision_user}
+      POSTGRES_VISION_PASSWORD: ${POSTGRES_VISION_PASSWORD:-vision_secret}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER:-agnitio_rabbit}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-rabbit_secret}
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${MINIO_DEFAULT_BUCKET:-agnitio-photos}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minio_admin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-internal-api-key-32chars-min}
+    ports:
+      - "${VISION_SERVICE_PORT:-8000}:8000"
+    depends_on:
+      postgres-vision:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
   rabbitmq:
     image: rabbitmq:4.4-management-alpine
     container_name: agnitio-rabbitmq
