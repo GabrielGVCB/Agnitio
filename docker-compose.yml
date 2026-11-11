@@ -1,0 +1,223 @@
+services:
+  postgres-photo:
+    image: postgres:17-alpine
+    container_name: agnitio-postgres-photo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_PHOTO_DB:-agnitio_photo}
+      POSTGRES_USER: ${POSTGRES_PHOTO_USER:-agnitio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PHOTO_PASSWORD:-agnitio_secret}
+    ports:
+      - "${POSTGRES_PHOTO_PORT:-5432}:5432"
+    volumes:
+      - postgres_photo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_PHOTO_USER:-agnitio_user} -d ${POSTGRES_PHOTO_DB:-agnitio_photo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  postgres-vision:
+    image: pgvector/pgvector:pg17
+    container_name: agnitio-postgres-vision
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_VISION_DB:-agnitio_vision}
+      POSTGRES_USER: ${POSTGRES_VISION_USER:-vision_user}
+      POSTGRES_PASSWORD: ${POSTGRES_VISION_PASSWORD:-vision_secret}
+    ports:
+      - "${POSTGRES_VISION_PORT:-5433}:5432"
+    volumes:
+      - postgres_vision_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_VISION_USER:-vision_user} -d ${POSTGRES_VISION_DB:-agnitio_vision}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  vision-service:
+    build:
+      context: ./vision-service
+      dockerfile: Dockerfile
+    container_name: agnitio-vision-service
+    restart: unless-stopped
+    environment:
+      POSTGRES_VISION_HOST: postgres-vision
+      POSTGRES_VISION_PORT: 5432
+      POSTGRES_VISION_DB: ${POSTGRES_VISION_DB:-agnitio_vision}
+      POSTGRES_VISION_USER: ${POSTGRES_VISION_USER:-vision_user}
+      POSTGRES_VISION_PASSWORD: ${POSTGRES_VISION_PASSWORD:-vision_secret}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_DEFAULT_USER:-agnitio_rabbit}
+      RABBITMQ_PASSWORD: ${RABBITMQ_DEFAULT_PASS:-rabbit_secret}
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: ${MINIO_DEFAULT_BUCKET:-agnitio-photos}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minio_admin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-internal-api-key-32chars-min}
+    ports:
+      - "${VISION_SERVICE_PORT:-8000}:8000"
+    depends_on:
+      postgres-vision:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:4.4-management-alpine
+    container_name: agnitio-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-agnitio_rabbit}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-rabbit_secret}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      - "15692:15692"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis:8.2-alpine
+    container_name: agnitio-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: bitnamilegacy/minio:latest
+    container_name: agnitio-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:3000,http://127.0.0.1:3000,*"
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  minio-init:
+    image: bitnamilegacy/minio:latest
+    container_name: agnitio-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minio_admin} $${MINIO_ROOT_PASSWORD:-minio_secret_key};
+      mc mb --ignore-existing local/$${MINIO_DEFAULT_BUCKET:-agnitio-photos};
+      mc anonymous set download local/$${MINIO_DEFAULT_BUCKET:-agnitio-photos};
+      exit 0;
+      "
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: agnitio-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  tempo:
+    image: grafana/tempo:2.6.0
+    container_name: agnitio-tempo
+    restart: unless-stopped
+    user: root
+    command:
+      - "-config.file=/etc/tempo.yaml"
+    ports:
+      - "${TEMPO_PORT:-3200}:3200"
+      - "${TEMPO_OTLP_GRPC_PORT:-4317}:4317"
+      - "${TEMPO_OTLP_HTTP_PORT:-4318}:4318"
+    volumes:
+      - ./infra/tempo/tempo.yml:/etc/tempo.yaml:ro
+      - tempo_data:/tmp/tempo
+
+  loki:
+    image: grafana/loki:3.1.1
+    container_name: agnitio-loki
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/loki/local-config.yaml"
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./infra/loki/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    container_name: agnitio-promtail
+    restart: unless-stopped
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    volumes:
+      - ./infra/promtail/promtail.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: agnitio-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./infra/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./infra/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./infra/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+
+volumes:
+  postgres_photo_data:
+  postgres_vision_data:
+  rabbitmq_data:
+  redis_data:
+  minio_data:
+  prometheus_data:
+  tempo_data:
+  loki_data:
+  grafana_data:
