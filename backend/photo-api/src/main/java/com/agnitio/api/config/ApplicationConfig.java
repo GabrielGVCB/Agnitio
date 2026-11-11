@@ -16,7 +16,11 @@ import com.agnitio.application.usecase.event.DeleteEventUseCase;
 import com.agnitio.application.usecase.event.GetEventByIdUseCase;
 import com.agnitio.application.usecase.event.ListPhotographerEventsUseCase;
 import com.agnitio.application.usecase.event.UpdateEventUseCase;
+import com.agnitio.application.ports.output.PhotoStorage;
+import com.agnitio.application.usecase.photo.ConfirmPhotoUploadUseCase;
+import com.agnitio.application.usecase.photo.ListEventPhotosUseCase;
 import com.agnitio.application.usecase.photo.RegisterUploadedPhotoUseCase;
+import com.agnitio.application.usecase.photo.RequestUploadUrlsUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -99,5 +103,36 @@ public class ApplicationConfig {
     @Bean
     public DeleteEventUseCase deleteEventUseCase(EventRepository eventRepository) {
         return new DeleteEventUseCase(eventRepository);
+    }
+
+    @Bean
+    public RequestUploadUrlsUseCase requestUploadUrlsUseCase(
+            EventRepository eventRepository,
+            PhotoRepository photoRepository,
+            PhotoStorage photoStorage
+    ) {
+        return new RequestUploadUrlsUseCase(eventRepository, photoRepository, photoStorage);
+    }
+
+    @Bean
+    public ConfirmPhotoUploadUseCase confirmPhotoUploadUseCase(
+            EventRepository eventRepository,
+            PhotoRepository photoRepository,
+            Optional<EventPublisher> eventPublisher
+    ) {
+        return new ConfirmPhotoUploadUseCase(
+                eventRepository,
+                photoRepository,
+                eventPublisher.orElse((routingKey, event) -> {})
+        );
+    }
+
+    @Bean
+    public ListEventPhotosUseCase listEventPhotosUseCase(
+            EventRepository eventRepository,
+            PhotoRepository photoRepository,
+            PhotoStorage photoStorage
+    ) {
+        return new ListEventPhotosUseCase(eventRepository, photoRepository, photoStorage);
     }
 }

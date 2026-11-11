@@ -75,4 +75,25 @@ public class Photo {
     public PhotoStatus getStatus() {
         return status;
     }
+
+    public String getOriginalStorageKey() {
+        String ext = getFileExtension(originalFileName);
+        return "events/" + eventId.value() + "/original/" + id.value() + (ext.isEmpty() ? "" : "." + ext);
+    }
+
+    public String getPreviewStorageKey() {
+        return "events/" + eventId.value() + "/preview/" + id.value() + ".webp";
+    }
+
+    public String getThumbnailStorageKey() {
+        return "events/" + eventId.value() + "/thumb/" + id.value() + ".webp";
+    }
+
+    private static String getFileExtension(String filename) {
+        if (filename == null) {
+            return "";
+        }
+        int lastDot = filename.lastIndexOf('.');
+        return (lastDot > 0 && lastDot < filename.length() - 1) ? filename.substring(lastDot + 1).toLowerCase() : "";
+    }
 }
