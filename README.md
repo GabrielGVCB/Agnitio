@@ -48,3 +48,9 @@ cd backend && ./mvnw verify
 - [ADR 0001: Fundação e Clean Architecture](docs/adr/0001-foundation-and-architecture.md)
 - [ADR 0002: Armazenamento S3 Local com MinIO e Alternativas](docs/adr/0002-s3-local-storage-minio.md)
 - [Contratos de Mensagens Assíncronas](docs/contracts/README.md)
+
+## Licença
+
+Este projeto está sob a [PolyForm Noncommercial License 1.0.0](LICENSE).
+O código pode ser estudado, modificado e usado para fins pessoais e
+educacionais. Uso comercial não é permitido.

@@ -179,6 +179,7 @@ Usos previstos: refresh tokens, progresso de processamento por evento, cache de 
 - Commits pequenos e focados.
 - Decisões de arquitetura relevantes viram um ADR em `docs/adr/` (formato: contexto, decisão, consequências).
 - Configuração via variáveis de ambiente; nada de segredos no repositório. Mantenha `.env.example` atualizado.
+- Licença: PolyForm Noncommercial 1.0.0. Nenhum agente deve alterar o LICENSE ou adicionar outra licença sem pedido explícito.
 
 ## Comandos
 

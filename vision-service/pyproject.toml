@@ -2,6 +2,7 @@
 name = "agnitio-vision-service"
 version = "0.1.0"
 description = "Computer vision service for face detection, embeddings and pgvector search"
+license = { text = "PolyForm Noncommercial License 1.0.0" }
 requires-python = ">=3.12"
 dependencies = []
 
