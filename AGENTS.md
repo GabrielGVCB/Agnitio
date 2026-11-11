@@ -210,3 +210,4 @@ cd frontend && npm run dev           # frontend local
 - Siga as regras de camadas mesmo quando um atalho parecer mais rápido.
 - Se uma decisão deste arquivo parecer errada para o caso, aponte o problema e proponha alternativa em vez de ignorá-la.
 - Ao concluir uma fase, atualize a "Fase atual" e a seção de comandos deste arquivo.
+- Agentes NUNCA executam git commit nem git push; isso é responsabilidade exclusiva do desenvolvedor.
