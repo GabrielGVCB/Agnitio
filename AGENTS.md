@@ -4,7 +4,7 @@ Este arquivo orienta agentes de IA (Antigravity, Claude Code e outros) neste rep
 
 ## Visão geral
 
-Plataforma de fotos de eventos (corridas, casamentos, formaturas, eventos corporativos). O fotógrafo cria um evento e sobe milhares de fotos; o sistema processa as imagens em segundo plano e publica uma galeria. O participante encontra as próprias fotos enviando uma selfie (reconhecimento facial) e, em uma fase futura, pelo número de peito (OCR).
+Plataforma de fotos de eventos (corridas, casamentos, formaturas, eventos corporativos). O fotógrafo cria um evento e sobe milhares de fotos; o sistema processa as imagens em segundo plano e publica uma galeria. O participante encontra as próprias fotos enviando uma selfie (reconhecimento facial). Não existe busca por número de peito.
 
 Projeto de portfólio: a qualidade da arquitetura, dos testes e da documentação importa tanto quanto as funcionalidades. Prefira soluções claras e bem justificadas a atalhos.
 
@@ -15,7 +15,7 @@ Nome do projeto: **Agnitio** (latim para "reconhecimento"). Repositório: `agnit
 | Camada | Tecnologia |
 |---|---|
 | API e worker de imagens | Java 25 (LTS), Spring Boot 4.x, Maven multi-módulo |
-| Serviço de visão computacional | Python 3.12+, FastAPI, InsightFace (rostos); PaddleOCR (número de peito, fase futura) |
+| Serviço de visão computacional | Python 3.12+, FastAPI, InsightFace, pgvector |
 | Frontend | Next.js, TypeScript, Tailwind CSS |
 | Banco de dados | PostgreSQL + Flyway (photo-api); PostgreSQL + pgvector (vision-service) |
 | Mensageria | RabbitMQ |
@@ -55,7 +55,7 @@ agnitio/
 
 **image-worker** — Consome `photo.uploaded`. Gera thumbnail, preview com marca d'água e extrai EXIF. Salva as variantes no storage, atualiza o status da foto e publica `photo.processed`. Reutiliza os módulos `domain`, `application` e `infrastructure`.
 
-**vision-service** — Consome `photo.processed`, detecta rostos, gera embeddings e os guarda no próprio banco (pgvector). Expõe HTTP interno para busca por selfie. Os detectores são plugins de uma interface comum, para que o detector de número de peito entre depois sem retrabalho.
+**vision-service** — Consome `photo.processed`, detecta rostos, gera embeddings e os guarda no próprio banco (pgvector). Expõe HTTP interno para busca por selfie.
 
 **frontend** — Duas áreas na mesma aplicação: painel do fotógrafo (autenticado) e galeria pública (renderizada no servidor para gerar prévias de link no WhatsApp e redes sociais).
 
@@ -79,7 +79,7 @@ Regras:
 ## Modelo de domínio
 
 - **Photographer**: conta autenticada; dono dos eventos.
-- **Event**: pertence a um fotógrafo; tem `type` (`RACE`, `WEDDING`, `GRADUATION`, `CORPORATE`, `OTHER`), visibilidade (pública ou privada com código de acesso) e prazo de retenção de dados biométricos. A detecção de número de peito só roda em eventos `RACE`.
+- **Event**: pertence a um fotógrafo; tem `type` (`RACE`, `WEDDING`, `GRADUATION`, `CORPORATE`, `OTHER`), visibilidade (pública ou privada com código de acesso) e prazo de retenção de dados biométricos.
 - **Photo**: pertence a um evento. Máquina de estados:
 
 ```
@@ -112,7 +112,6 @@ Exchange `photos` do tipo topic. Routing keys:
 | `photo.uploaded` | photo-api | image-worker |
 | `photo.processed` | image-worker | vision-service |
 | `photo.faces.indexed` | vision-service | photo-api |
-| `photo.bib.detected` | vision-service (futuro) | photo-api |
 
 Regras obrigatórias:
 
@@ -200,9 +199,8 @@ cd frontend && npm run dev           # frontend local
 4. **Processamento**: image-worker, variantes e marca d'água, progresso via SSE.
 5. **Observabilidade**: OpenTelemetry, Grafana, Loki, Prometheus, Tempo.
 6. **Reconhecimento facial**: vision-service, indexação com pgvector, busca por selfie com consentimento.
-7. **Número de peito**: detector OCR para eventos `RACE`.
 
-**Fase atual: 2 — Auth e eventos.** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
+**Fase atual: 3 — Upload.** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
 
 ## Como trabalhar neste repositório
 

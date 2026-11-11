@@ -119,19 +119,27 @@ export default function DashboardPage() {
 
               <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between gap-2">
                 <a
-                  href={`/events/${event.id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                  href={`/dashboard/events/${event.id}/upload`}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition"
                 >
-                  Ver Galeria Pública ↗
+                  Upload de Fotos
                 </a>
-                <button
-                  onClick={() => handleDelete(event.id)}
-                  className="text-xs text-red-400 hover:text-red-300 font-medium"
-                >
-                  Excluir
-                </button>
+                <div className="flex items-center space-x-3">
+                  <a
+                    href={`/events/${event.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+                  >
+                    Galeria ↗
+                  </a>
+                  <button
+                    onClick={() => handleDelete(event.id)}
+                    className="text-xs text-red-400 hover:text-red-300 font-medium"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
             </div>
           ))}

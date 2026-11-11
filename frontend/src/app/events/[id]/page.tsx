@@ -1,31 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { api, EventDto } from "@/lib/api";
+import { useEffect, useState, use } from "react";
+import Link from "next/link";
+import { api, EventDto, PhotoGalleryItem } from "@/lib/api";
+import { ArrowLeft, Lock, Image as ImageIcon, Download, ExternalLink, ShieldAlert } from "lucide-react";
 
-export default function PublicEventPage() {
-  const params = useParams();
-  const eventId = params.id as string;
+export default function PublicEventPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = use(params);
+  const eventId = resolvedParams.id;
 
   const [event, setEvent] = useState<EventDto | null>(null);
+  const [photos, setPhotos] = useState<PhotoGalleryItem[]>([]);
   const [accessCode, setAccessCode] = useState("");
   const [needsCode, setNeedsCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadEvent = async (code?: string) => {
+  const loadEventAndGallery = async (code?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await api.events.getPublic(eventId, code);
-      setEvent(data);
+      const eventData = await api.events.getPublic(eventId, code);
+      setEvent(eventData);
+
+      const galleryData = await api.photos.getGallery(eventId, code);
+      setPhotos(galleryData.photos || []);
       setNeedsCode(false);
     } catch (err: unknown) {
       if (err instanceof Error && err.message.toLowerCase().includes("access code")) {
         setNeedsCode(true);
       } else {
-        setError(err instanceof Error ? err.message : "Erro ao carregar evento");
+        setError(err instanceof Error ? err.message : "Erro ao carregar galeria do evento");
       }
     } finally {
       setLoading(false);
@@ -34,19 +43,19 @@ export default function PublicEventPage() {
 
   useEffect(() => {
     if (eventId) {
-      loadEvent();
+      loadEventAndGallery();
     }
   }, [eventId]);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessCode.trim()) return;
-    loadEvent(accessCode.trim());
+    loadEventAndGallery(accessCode.trim());
   };
 
   if (loading && !event && !needsCode) {
     return (
-      <div className="flex justify-center items-center py-24 text-slate-400">
+      <div className="flex justify-center items-center py-24 text-[#b9d3ee] font-hud">
         Carregando galeria do evento...
       </div>
     );
@@ -54,17 +63,17 @@ export default function PublicEventPage() {
 
   if (needsCode && !event) {
     return (
-      <div className="max-w-md mx-auto my-16 p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center shadow-xl">
-        <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl font-bold">
-          🔒
+      <div className="max-w-md mx-auto my-16 p-8 bg-[#0b1a33] border border-[#5ec8ff]/30 rounded-[6px] text-center shadow-2xl">
+        <div className="w-12 h-12 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4">
+          <Lock className="w-6 h-6" />
         </div>
-        <h2 className="mt-4 text-2xl font-bold text-white">Evento Privado</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Este evento é protegido. Digite o código de acesso fornecido pela organização.
+        <h2 className="text-2xl font-hud font-bold text-white">Evento Protegido</h2>
+        <p className="mt-2 text-xs text-[#b9d3ee] font-hud">
+          Esta galeria é privada. Insira o código de acesso fornecido pela organização.
         </p>
 
         {error && (
-          <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm">
+          <div className="mt-4 p-3 bg-[#ff4040]/10 border border-[#ff4040]/30 text-[#ff4040] rounded-[4px] text-xs font-hud">
             {error}
           </div>
         )}
@@ -75,13 +84,13 @@ export default function PublicEventPage() {
             required
             value={accessCode}
             onChange={(e) => setAccessCode(e.target.value)}
-            className="block w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-center tracking-widest placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 uppercase font-mono"
-            placeholder="CÓDIGO"
+            className="block w-full px-4 py-2.5 bg-[#050d1c] border border-[#5ec8ff]/30 rounded-[4px] text-white text-center tracking-widest placeholder-[#b9d3ee]/40 focus:outline-none focus:border-[#5ec8ff] uppercase font-mono text-sm"
+            placeholder="CÓDIGO DE ACESSO"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium rounded-xl transition"
+            className="w-full py-2.5 bg-[#5ec8ff] hover:bg-[#4ab4eb] disabled:opacity-50 text-[#050d1c] font-hud font-bold text-xs uppercase tracking-wide rounded-[4px] transition shadow-[0_0_12px_rgba(94,200,255,0.4)]"
           >
             {loading ? "Verificando..." : "Liberar Acesso"}
           </button>
@@ -92,41 +101,123 @@ export default function PublicEventPage() {
 
   if (error && !event) {
     return (
-      <div className="text-center py-24">
-        <h2 className="text-2xl font-bold text-white">Ops! Algo deu errado</h2>
-        <p className="mt-2 text-slate-400">{error}</p>
-        <a href="/" className="inline-block mt-6 px-6 py-2 bg-slate-800 text-white rounded-xl">
+      <div className="text-center py-24 font-hud">
+        <h2 className="text-2xl font-bold text-white">Evento não encontrado</h2>
+        <p className="mt-2 text-sm text-[#b9d3ee]">{error}</p>
+        <Link
+          href="/"
+          className="inline-block mt-6 px-6 py-2 bg-[#0b1a33] border border-[#5ec8ff]/30 text-[#5ec8ff] hover:bg-[#5ec8ff]/10 rounded-[4px] text-xs transition"
+        >
           Voltar ao Início
-        </a>
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="pb-6 border-b border-slate-800">
-        <div className="flex items-center space-x-2">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-            {event?.type}
-          </span>
-          {event?.visibility === "PRIVATE" && (
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              Galeria Privada
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      {/* Event Header */}
+      <div className="pb-6 border-b border-[#5ec8ff]/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <Link
+            href="/"
+            className="inline-flex items-center space-x-1.5 text-xs font-hud text-[#5ec8ff] hover:text-white transition mb-2"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Voltar</span>
+          </Link>
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-hud font-semibold px-2.5 py-0.5 rounded-[3px] bg-[#5ec8ff]/10 text-[#5ec8ff] border border-[#5ec8ff]/30">
+              {event?.type}
             </span>
-          )}
+            {event?.visibility === "PRIVATE" && (
+              <span className="text-xs font-hud font-semibold px-2.5 py-0.5 rounded-[3px] bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                Privado
+              </span>
+            )}
+          </div>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-hud font-bold text-white tracking-tight">
+            {event?.name}
+          </h1>
+          <p className="mt-1 text-xs text-[#b9d3ee] font-hud">
+            {photos.length} {photos.length === 1 ? 'foto disponível' : 'fotos disponíveis'} na galeria oficial
+          </p>
         </div>
-        <h1 className="mt-3 text-4xl font-extrabold text-white tracking-tight">{event?.name}</h1>
-        <p className="mt-2 text-sm text-slate-400">
-          Galeria oficial de fotos do evento.
-        </p>
+
+        <div className="flex items-center space-x-3">
+          <Link
+            href={`/dashboard/events/${eventId}/upload`}
+            className="text-xs font-hud px-4 py-2 rounded-[4px] bg-[#0b1a33] border border-[#5ec8ff]/40 text-[#5ec8ff] hover:bg-[#5ec8ff]/10 transition"
+          >
+            Área do Fotógrafo (Upload)
+          </Link>
+        </div>
       </div>
 
-      <div className="p-8 bg-slate-900 border border-slate-800 rounded-2xl text-center">
-        <p className="text-slate-300 font-medium">As fotos deste evento serão processadas e exibidas aqui.</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Na Fase 3 e 4, uploads em massa e variantes otimizadas (thumbnails e previews com marca d'água) estarão disponíveis.
-        </p>
-      </div>
+      {/* Photo Gallery Grid */}
+      {photos.length === 0 ? (
+        <div className="p-12 bg-[#0b1a33] border border-[#5ec8ff]/20 rounded-[6px] text-center font-hud">
+          <ImageIcon className="w-12 h-12 text-[#5ec8ff]/40 mx-auto mb-3" />
+          <p className="text-white font-bold text-base">Nenhuma foto no ar ainda</p>
+          <p className="mt-1 text-xs text-[#b9d3ee]">
+            O fotógrafo ainda não subiu as fotos para este evento ou elas estão em processamento.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {photos.map((photo) => (
+            <div
+              key={photo.photoId}
+              className="bg-[#0b1a33] border border-[#5ec8ff]/20 hover:border-[#5ec8ff] rounded-[6px] overflow-hidden transition group shadow-lg flex flex-col justify-between"
+            >
+              {/* Photo Image Preview */}
+              <div className="relative aspect-video bg-[#050d1c] overflow-hidden flex items-center justify-center">
+                {photo.previewUrl || photo.thumbnailUrl || photo.originalUrl ? (
+                  <img
+                    src={photo.previewUrl || photo.thumbnailUrl || photo.originalUrl}
+                    alt={photo.originalFileName}
+                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    loading="lazy"
+                  />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-[#5ec8ff]/30" />
+                )}
+
+                {/* Status Badge */}
+                <span className="absolute top-2 right-2 text-[10px] font-hud px-2 py-0.5 rounded-[2px] bg-[#050d1c]/80 text-[#5ec8ff] border border-[#5ec8ff]/30">
+                  {photo.status}
+                </span>
+              </div>
+
+              {/* Photo Details and Actions */}
+              <div className="p-3 text-xs font-hud">
+                <p className="text-white font-medium truncate mb-2">{photo.originalFileName}</p>
+                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                  <a
+                    href={photo.originalUrl || photo.previewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[#5ec8ff] hover:underline inline-flex items-center space-x-1"
+                  >
+                    <span>Abrir</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href={photo.originalUrl || photo.previewUrl}
+                    download={photo.originalFileName}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-1 rounded-[3px] bg-[#5ec8ff]/10 text-[#5ec8ff] hover:bg-[#5ec8ff] hover:text-[#050d1c] transition"
+                    title="Download"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

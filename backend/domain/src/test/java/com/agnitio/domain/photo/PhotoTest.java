@@ -70,4 +70,19 @@ class PhotoTest {
                 .isInstanceOf(InvalidPhotoStateTransitionException.class)
                 .hasMessageContaining("READY to FAILED");
     }
+
+    @Test
+    @DisplayName("Should generate standard storage keys according to specification")
+    void shouldGenerateCorrectStorageKeys() {
+        PhotoId photoId = PhotoId.generate();
+        EventId eventId = EventId.generate();
+        Photo photo = new Photo(photoId, eventId, "runner_10k.JPG", Instant.now());
+
+        assertThat(photo.getOriginalStorageKey())
+                .isEqualTo("events/" + eventId.value() + "/original/" + photoId.value() + ".jpg");
+        assertThat(photo.getPreviewStorageKey())
+                .isEqualTo("events/" + eventId.value() + "/preview/" + photoId.value() + ".webp");
+        assertThat(photo.getThumbnailStorageKey())
+                .isEqualTo("events/" + eventId.value() + "/thumb/" + photoId.value() + ".webp");
+    }
 }

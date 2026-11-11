@@ -6,7 +6,9 @@ import com.agnitio.domain.photo.Photo;
 import com.agnitio.domain.photo.PhotoId;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Component
 public class PhotoRepositoryAdapter implements PhotoRepository {
@@ -24,8 +26,31 @@ public class PhotoRepositoryAdapter implements PhotoRepository {
     }
 
     @Override
+    public void saveAll(List<Photo> photos) {
+        List<PhotoJpaEntity> entities = photos.stream()
+                .map(this::toJpaEntity)
+                .toList();
+        repository.saveAll(entities);
+    }
+
+    @Override
     public Optional<Photo> findById(PhotoId id) {
         return repository.findById(id.value()).map(this::toDomainEntity);
+    }
+
+    @Override
+    public List<Photo> findByEventId(EventId eventId) {
+        return repository.findByEventId(eventId.value()).stream()
+                .map(this::toDomainEntity)
+                .toList();
+    }
+
+    @Override
+    public List<Photo> findAllById(List<PhotoId> ids) {
+        List<UUID> uuidList = ids.stream().map(PhotoId::value).toList();
+        return repository.findAllById(uuidList).stream()
+                .map(this::toDomainEntity)
+                .toList();
     }
 
     private PhotoJpaEntity toJpaEntity(Photo domain) {

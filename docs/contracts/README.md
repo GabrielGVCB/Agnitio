@@ -24,7 +24,6 @@ Toda mensagem JSON publicada deve conter os seguintes metadados de cabeçalho:
 | `photo.uploaded` | `photo-api` | `image-worker` | Foto bruta enviada ao storage, pronta para variantes e EXIF. |
 | `photo.processed` | `image-worker` | `vision-service` | Variantes (thumb/preview) geradas; pronta para visão computacional. |
 | `photo.faces.indexed` | `vision-service` | `photo-api` | Rostos detectados e indexados com sucesso no pgvector. |
-| `photo.bib.detected` | `vision-service` | `photo-api` | Números de peito detectados via OCR (fase futura). |
 
 ## Regras de Consumo
 
