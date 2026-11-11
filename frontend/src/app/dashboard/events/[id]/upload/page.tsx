@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { UploadCloud, CheckCircle2, AlertCircle, ArrowLeft, RefreshCw, Eye, Image as ImageIcon } from 'lucide-react';
-import { api, UploadUrlItem } from '@/lib/api';
+import { api, UploadUrlItem, EventProgressDto } from '@/lib/api';
 
 interface FileUploadTask {
   id: string;
@@ -35,8 +35,19 @@ export default function EventPhotoUploadPage({
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [allCompleted, setAllCompleted] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState<EventProgressDto | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     async function loadEvent() {
@@ -170,6 +181,49 @@ export default function EventPhotoUploadPage({
       // 4. Confirm completed uploads on the backend
       if (confirmedIds.length > 0) {
         await api.photos.confirmUpload(eventId, confirmedIds);
+
+        // 5. Connect to SSE progress stream for background image processing
+        setIsProcessing(true);
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close();
+        }
+
+        try {
+          const es = new EventSource(api.photos.getProgressEventSourceUrl(eventId));
+          eventSourceRef.current = es;
+
+          es.addEventListener('progress', (event) => {
+            try {
+              const data: EventProgressDto = JSON.parse(event.data);
+              setProcessingProgress(data);
+              if (data.completed) {
+                setIsProcessing(false);
+                es.close();
+              }
+            } catch {
+              // ignore parse error
+            }
+          });
+
+          es.onerror = () => {
+            es.close();
+            // Polling fallback
+            const interval = setInterval(async () => {
+              try {
+                const status = await api.photos.getProgress(eventId);
+                setProcessingProgress(status);
+                if (status.completed) {
+                  setIsProcessing(false);
+                  clearInterval(interval);
+                }
+              } catch {
+                clearInterval(interval);
+              }
+            }, 1500);
+          };
+        } catch {
+          // If SSE connection fails, fallback to polling
+        }
       }
 
       setAllCompleted(true);
@@ -291,7 +345,7 @@ export default function EventPhotoUploadPage({
           {/* Overall progress bar */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs font-hud text-[#b9d3ee]">
-              <span>Progresso Geral</span>
+              <span>Progresso de Envio</span>
               <span>{overallPercentage}%</span>
             </div>
             <div className="w-full h-2 rounded-[2px] bg-[#050d1c] overflow-hidden">
@@ -301,6 +355,85 @@ export default function EventPhotoUploadPage({
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Worker Background Processing (HUD Style) */}
+      {(isProcessing || processingProgress) && (
+        <div className="bg-[#081530] border border-[#5ec8ff]/40 rounded-[6px] p-5 mb-8 space-y-4 shadow-[0_0_20px_rgba(94,200,255,0.15)] relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  processingProgress?.completed ? 'bg-emerald-400' : 'bg-[#5ec8ff] animate-ping'
+                }`}
+              />
+              <div>
+                <span className="text-xs font-hud text-[#5ec8ff] uppercase tracking-wider flex items-center space-x-2">
+                  <span>IMAGE-WORKER // PROCESSAMENTO DE VARIANTES</span>
+                  {isProcessing && (
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-[#ff4040]/20 text-[#ff4040] border border-[#ff4040]/40 animate-pulse">
+                      REC
+                    </span>
+                  )}
+                </span>
+                <p className="text-sm font-hud text-white font-semibold">
+                  {processingProgress?.completed
+                    ? 'Processamento de imagens concluído com sucesso!'
+                    : 'Gerando WebP (Thumbnail e Preview com marca d\'água)...'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4 text-xs font-hud">
+              <div className="text-right">
+                <span className="text-[#b9d3ee]/60 block text-[10px]">TOTAL LOTE</span>
+                <span className="text-white font-bold">{processingProgress?.total || 0}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[#5ec8ff] block text-[10px]">PROCESSADAS</span>
+                <span className="text-[#5ec8ff] font-bold">{processingProgress?.processed || 0}</span>
+              </div>
+              {processingProgress && processingProgress.failed > 0 && (
+                <div className="text-right">
+                  <span className="text-[#ff4040] block text-[10px]">FALHAS</span>
+                  <span className="text-[#ff4040] font-bold">{processingProgress.failed}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Worker Progress Bar */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs font-hud text-[#b9d3ee]">
+              <span>Progresso do Worker (SSE Stream)</span>
+              <span className="text-[#5ec8ff] font-bold">
+                {Math.round(processingProgress?.percentage || 0)}%
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-[2px] bg-[#050d1c] overflow-hidden border border-[#5ec8ff]/30">
+              <div
+                className="h-full bg-gradient-to-r from-[#5ec8ff] to-emerald-400 transition-all duration-300"
+                style={{ width: `${Math.round(processingProgress?.percentage || 0)}%` }}
+              />
+            </div>
+          </div>
+
+          {processingProgress?.completed && (
+            <div className="pt-2 flex items-center justify-between border-t border-[#5ec8ff]/20">
+              <span className="text-xs font-hud text-emerald-400 flex items-center space-x-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>Variantes prontas e disponíveis na galeria pública.</span>
+              </span>
+              <Link
+                href={`/events/${eventId}`}
+                className="text-xs font-hud px-3 py-1.5 rounded-[4px] bg-[#5ec8ff] text-[#050d1c] font-bold hover:bg-[#4ab4eb] transition inline-flex items-center space-x-1.5"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Conferir Galeria</span>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 

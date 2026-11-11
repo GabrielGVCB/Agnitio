@@ -90,6 +90,16 @@
             <artifactId>s3</artifactId>
         </dependency>
 
+        <!-- Scrimage (image processing & WebP) -->
+        <dependency>
+            <groupId>com.sksamuel.scrimage</groupId>
+            <artifactId>scrimage-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sksamuel.scrimage</groupId>
+            <artifactId>scrimage-webp</artifactId>
+        </dependency>
+
         <!-- Test dependencies (managed by root BOM) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -41,6 +41,7 @@
         <!-- Libraries not covered by Spring Boot BOM -->
         <archunit.version>1.4.0</archunit.version>
         <aws-sdk.version>2.31.2</aws-sdk.version>
+        <scrimage.version>4.1.3</scrimage.version>
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.2</maven-failsafe-plugin.version>
@@ -91,6 +92,18 @@
                 <groupId>com.agnitio</groupId>
                 <artifactId>image-worker</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- Scrimage (image resizing & WebP) -->
+            <dependency>
+                <groupId>com.sksamuel.scrimage</groupId>
+                <artifactId>scrimage-core</artifactId>
+                <version>${scrimage.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sksamuel.scrimage</groupId>
+                <artifactId>scrimage-webp</artifactId>
+                <version>${scrimage.version}</version>
             </dependency>
 
             <!-- ArchUnit (Architectural testing) -->
