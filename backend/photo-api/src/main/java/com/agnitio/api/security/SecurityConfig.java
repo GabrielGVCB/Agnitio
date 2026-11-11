@@ -43,6 +43,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/events/*/public").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/events/*/photos").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/events/*/progress").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/events/*/progress/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // Protected endpoints
                         .anyRequest().authenticated()

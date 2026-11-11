@@ -3,6 +3,7 @@ package com.agnitio.api.config;
 import com.agnitio.application.ports.output.EventPublisher;
 import com.agnitio.application.ports.output.EventRepository;
 import com.agnitio.application.ports.output.PasswordEncoderPort;
+import com.agnitio.application.ports.output.PhotoProgressTracker;
 import com.agnitio.application.ports.output.PhotoRepository;
 import com.agnitio.application.ports.output.PhotographerRepository;
 import com.agnitio.application.ports.output.RefreshTokenStorage;
@@ -118,12 +119,14 @@ public class ApplicationConfig {
     public ConfirmPhotoUploadUseCase confirmPhotoUploadUseCase(
             EventRepository eventRepository,
             PhotoRepository photoRepository,
-            Optional<EventPublisher> eventPublisher
+            Optional<EventPublisher> eventPublisher,
+            Optional<PhotoProgressTracker> photoProgressTracker
     ) {
         return new ConfirmPhotoUploadUseCase(
                 eventRepository,
                 photoRepository,
-                eventPublisher.orElse((routingKey, event) -> {})
+                eventPublisher.orElse((routingKey, event) -> {}),
+                photoProgressTracker.orElse(null)
         );
     }
 
