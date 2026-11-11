@@ -185,7 +185,7 @@ Usos previstos: refresh tokens, progresso de processamento por evento, cache de 
 Atualize esta seção conforme os comandos forem criados.
 
 ```bash
-docker compose up -d                 # infraestrutura local
+docker compose up -d                 # infraestrutura local (inclui Grafana :3001, Prometheus :9090, Tempo :3200, Loki :3100)
 cd backend && ./mvnw verify          # build + testes Java
 cd vision-service && pytest          # testes Python
 cd frontend && npm run dev           # frontend local
@@ -200,7 +200,7 @@ cd frontend && npm run dev           # frontend local
 5. **Observabilidade**: OpenTelemetry, Grafana, Loki, Prometheus, Tempo.
 6. **Reconhecimento facial**: vision-service, indexação com pgvector, busca por selfie com consentimento.
 
-**Fase atual: 4 — Processamento.** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
+**Fase atual: 5 — Observabilidade (Concluída).** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
 
 ## Como trabalhar neste repositório
 
