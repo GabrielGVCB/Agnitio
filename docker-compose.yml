@@ -1,0 +1,111 @@
+services:
+  postgres-photo:
+    image: postgres:17-alpine
+    container_name: agnitio-postgres-photo
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_PHOTO_DB:-agnitio_photo}
+      POSTGRES_USER: ${POSTGRES_PHOTO_USER:-agnitio_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PHOTO_PASSWORD:-agnitio_secret}
+    ports:
+      - "${POSTGRES_PHOTO_PORT:-5432}:5432"
+    volumes:
+      - postgres_photo_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_PHOTO_USER:-agnitio_user} -d ${POSTGRES_PHOTO_DB:-agnitio_photo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  postgres-vision:
+    image: pgvector/pgvector:pg17
+    container_name: agnitio-postgres-vision
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_VISION_DB:-agnitio_vision}
+      POSTGRES_USER: ${POSTGRES_VISION_USER:-vision_user}
+      POSTGRES_PASSWORD: ${POSTGRES_VISION_PASSWORD:-vision_secret}
+    ports:
+      - "${POSTGRES_VISION_PORT:-5433}:5432"
+    volumes:
+      - postgres_vision_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_VISION_USER:-vision_user} -d ${POSTGRES_VISION_DB:-agnitio_vision}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4.4-management-alpine
+    container_name: agnitio-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-agnitio_rabbit}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-rabbit_secret}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis:8.2-alpine
+    container_name: agnitio-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: bitnamilegacy/minio:latest
+    container_name: agnitio-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio_admin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  minio-init:
+    image: bitnamilegacy/minio:latest
+    container_name: agnitio-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-minio_admin} $${MINIO_ROOT_PASSWORD:-minio_secret_key};
+      mc mb --ignore-existing local/$${MINIO_DEFAULT_BUCKET:-agnitio-photos};
+      mc anonymous set download local/$${MINIO_DEFAULT_BUCKET:-agnitio-photos};
+      exit 0;
+      "
+
+volumes:
+  postgres_photo_data:
+  postgres_vision_data:
+  rabbitmq_data:
+  redis_data:
+  minio_data:

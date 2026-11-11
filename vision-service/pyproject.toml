@@ -1,0 +1,10 @@
+[project]
+name = "agnitio-vision-service"
+version = "0.1.0"
+description = "Computer vision service for face detection, embeddings and pgvector search"
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
