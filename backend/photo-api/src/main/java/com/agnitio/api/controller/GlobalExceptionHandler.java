@@ -4,6 +4,8 @@ import com.agnitio.api.controller.dto.ErrorResponseDto;
 import com.agnitio.domain.event.EventNotFoundException;
 import com.agnitio.domain.event.InvalidEventException;
 import com.agnitio.domain.event.UnauthorizedEventAccessException;
+import com.agnitio.domain.photo.InvalidBiometricConsentException;
+import com.agnitio.domain.photo.RateLimitExceededException;
 import com.agnitio.domain.photographer.EmailAlreadyExistsException;
 import com.agnitio.domain.photographer.InvalidCredentialsException;
 import com.agnitio.domain.photographer.InvalidPhotographerStateException;
@@ -62,6 +64,18 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ErrorResponseDto.of(HttpStatus.BAD_REQUEST.value(), "VALIDATION_FAILED", "Invalid request body", details));
+    }
+
+    @ExceptionHandler(InvalidBiometricConsentException.class)
+    public ResponseEntity<ErrorResponseDto> handleBiometricConsentRequired(InvalidBiometricConsentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponseDto.of(HttpStatus.BAD_REQUEST.value(), "BIOMETRIC_CONSENT_REQUIRED", ex.getMessage()));
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponseDto> handleRateLimitExceeded(RateLimitExceededException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(ErrorResponseDto.of(HttpStatus.TOO_MANY_REQUESTS.value(), "RATE_LIMIT_EXCEEDED", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

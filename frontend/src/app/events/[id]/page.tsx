@@ -3,7 +3,8 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { api, EventDto, PhotoGalleryItem } from "@/lib/api";
-import { ArrowLeft, Lock, Image as ImageIcon, Download, ExternalLink, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Lock, Image as ImageIcon, Download, ExternalLink, ShieldAlert, Camera } from "lucide-react";
+import SelfieSearchModal from "@/components/SelfieSearchModal";
 
 export default function PublicEventPage({
   params,
@@ -19,6 +20,7 @@ export default function PublicEventPage({
   const [needsCode, setNeedsCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSelfieModalOpen, setIsSelfieModalOpen] = useState(false);
 
   const loadEventAndGallery = async (code?: string) => {
     setLoading(true);
@@ -145,6 +147,14 @@ export default function PublicEventPage({
         </div>
 
         <div className="flex items-center space-x-3">
+          <button
+            type="button"
+            onClick={() => setIsSelfieModalOpen(true)}
+            className="text-xs font-hud font-bold px-4 py-2 rounded-[4px] bg-[#5ec8ff] hover:bg-[#4cb6ed] text-[#050d1c] transition flex items-center space-x-1.5 shadow-[0_0_12px_rgba(94,200,255,0.4)] active:scale-95 cursor-pointer"
+          >
+            <Camera className="w-4 h-4 text-[#050d1c]" />
+            <span>Buscar Minhas Fotos (Selfie)</span>
+          </button>
           <Link
             href={`/dashboard/events/${eventId}/upload`}
             className="text-xs font-hud px-4 py-2 rounded-[4px] bg-[#0b1a33] border border-[#5ec8ff]/40 text-[#5ec8ff] hover:bg-[#5ec8ff]/10 transition"
@@ -218,6 +228,14 @@ export default function PublicEventPage({
           ))}
         </div>
       )}
+
+      {/* AF-C Biometric Face Search Modal */}
+      <SelfieSearchModal
+        isOpen={isSelfieModalOpen}
+        onClose={() => setIsSelfieModalOpen(false)}
+        eventId={eventId}
+        eventName={event?.name}
+      />
     </div>
   );
 }

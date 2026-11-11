@@ -19,6 +19,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.mock.web.MockMultipartFile;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -30,6 +31,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -182,5 +184,23 @@ class EventPhotoControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(uploadReq)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Should return 400 when biometric consent is not given")
+    void shouldRejectSelfieSearchWithoutConsent() throws Exception {
+        UUID eventId = UUID.randomUUID();
+        MockMultipartFile file = new MockMultipartFile(
+                "selfie",
+                "selfie.jpg",
+                MediaType.IMAGE_JPEG_VALUE,
+                new byte[]{1, 2, 3}
+        );
+
+        mockMvc.perform(multipart("/api/v1/events/" + eventId + "/photos/search-by-selfie")
+                        .file(file)
+                        .param("consent", "false"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("BIOMETRIC_CONSENT_REQUIRED"));
     }
 }

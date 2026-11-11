@@ -58,6 +58,19 @@ Toda mensagem JSON publicada deve conter os seguintes metadados de cabeçalho:
 }
 ```
 
+#### `photo.faces.indexed`
+```json
+{
+  "messageId": "7f8b9c0d-1e2f-4a5b-8c9d-0e1f2a3b4c5d",
+  "correlationId": "50c82fb6-ecb8-4389-a292-6d2c4bf2a647",
+  "occurredAt": "2026-11-11T13:30:10.000Z",
+  "schemaVersion": 1,
+  "photoId": "a57bbda0-3bd8-47bc-a567-27b9c9f4d1c9",
+  "eventId": "18e69efc-f1d2-43bb-a5a4-569614db2540",
+  "facesCount": 3
+}
+```
+
 ## Regras de Consumo
 
 1. **Idempotência Obrigatória**: Todo consumidor deve verificar se a operação já foi concluída antes de reprocessar.

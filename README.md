@@ -1,6 +1,6 @@
 # Agnitio
 
-**Agnitio** (do latim *"reconhecimento"*) é uma plataforma de fotos de eventos (corridas, casamentos, formaturas, eventos corporativos). O fotógrafo cria um evento e sobe milhares de fotos; o sistema processa as imagens em segundo plano e publica uma galeria. O participante encontra as próprias fotos enviando uma selfie (reconhecimento facial) e, em fase futura, pelo número de peito (OCR).
+**Agnitio** (do latim *"reconhecimento"*) é uma plataforma de fotos de eventos (corridas, casamentos, formaturas, eventos corporativos). O fotógrafo cria um evento e sobe milhares de fotos; o sistema processa as imagens em segundo plano e publica uma galeria. O participante encontra as próprias fotos exclusivamente enviando uma selfie (reconhecimento facial ético com prova de vida e conformidade LGPD). Não existe busca por número de peito.
 
 ## Stack Tecnológica
 
@@ -35,16 +35,24 @@ agnitio/
 ## Comandos Rápidos
 
 ```bash
-# Iniciar a infraestrutura local (Postgres, RabbitMQ, Redis, MinIO, Prometheus, Tempo, Loki, Grafana)
+# Iniciar a infraestrutura local (Postgres, RabbitMQ, Redis, MinIO, Prometheus, Tempo, Loki, Grafana, Vision)
 docker compose up -d
 
 # Compilar e rodar todos os testes do backend (incluindo ArchUnit e Testcontainers)
 cd backend && ./mvnw verify
+
+# Rodar testes do serviço de visão computacional
+cd vision-service && pytest
+
+# Rodar o frontend localmente
+cd frontend && npm run dev
 ```
 
 ### Portais e Ferramentas Locais
 
 - **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **API REST (photo-api)**: [http://localhost:8080](http://localhost:8080)
+- **Serviço de Visão (vision-service)**: [http://localhost:8000](http://localhost:8000)
 - **Grafana (Dashboards, Logs & Traces)**: [http://localhost:3001](http://localhost:3001) (admin/admin)
 - **Prometheus (Métricas)**: [http://localhost:9090](http://localhost:9090)
 - **MinIO Console (S3 Storage)**: [http://localhost:9001](http://localhost:9001) (minio_admin/minio_secret_key)
@@ -56,6 +64,7 @@ cd backend && ./mvnw verify
 - [ADR 0001: Fundação e Clean Architecture](docs/adr/0001-foundation-and-architecture.md)
 - [ADR 0002: Armazenamento S3 Local com MinIO e Alternativas](docs/adr/0002-s3-local-storage-minio.md)
 - [ADR 0003: Arquitetura de Observabilidade Distribuída](docs/adr/0003-observability-stack.md)
+- [ADR 0004: Reconhecimento Facial com pgvector e Conformidade LGPD](docs/adr/0004-facial-recognition-and-pgvector.md)
 - [Contratos de Mensagens Assíncronas](docs/contracts/README.md)
 
 ## Licença
