@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: image-worker
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_PHOTO_HOST:localhost}:${POSTGRES_PHOTO_PORT:5432}/${POSTGRES_PHOTO_DB:agnitio_photo}
+    username: ${POSTGRES_PHOTO_USER:agnitio_user}
+    password: ${POSTGRES_PHOTO_PASSWORD:agnitio_secret}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_DEFAULT_USER:agnitio_rabbit}
+    password: ${RABBITMQ_DEFAULT_PASS:rabbit_secret}
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
