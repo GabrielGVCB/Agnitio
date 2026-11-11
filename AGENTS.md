@@ -202,7 +202,7 @@ cd frontend && npm run dev           # frontend local
 6. **Reconhecimento facial**: vision-service, indexação com pgvector, busca por selfie com consentimento.
 7. **Número de peito**: detector OCR para eventos `RACE`.
 
-**Fase atual: 1 — Fundação.** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
+**Fase atual: 2 — Auth e eventos.** Não implemente funcionalidades de fases futuras antes da hora; deixe apenas os pontos de extensão previstos.
 
 ## Como trabalhar neste repositório
 
