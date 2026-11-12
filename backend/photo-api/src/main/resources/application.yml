@@ -38,7 +38,7 @@ agnitio:
       secret-key: ${S3_SECRET_KEY:minio_secret_key}
       path-style-access: ${S3_PATH_STYLE_ACCESS:true}
   vision:
-    base-url: ${VISION_SERVICE_URL:http://localhost:8000}
+    base-url: ${VISION_SERVICE_URL:http://localhost:8001}
     internal-api-key: ${INTERNAL_API_KEY:dev-internal-key}
   logging:
     loki:

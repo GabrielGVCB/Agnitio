@@ -52,7 +52,7 @@ cd frontend && npm run dev
 
 - **Frontend**: [http://localhost:3000](http://localhost:3000)
 - **API REST (photo-api)**: [http://localhost:8080](http://localhost:8080)
-- **Serviço de Visão (vision-service)**: [http://localhost:8000](http://localhost:8000)
+- **Serviço de Visão (vision-service)**: [http://localhost:8001](http://localhost:8001)
 - **Grafana (Dashboards, Logs & Traces)**: [http://localhost:3001](http://localhost:3001) (admin/admin)
 - **Prometheus (Métricas)**: [http://localhost:9090](http://localhost:9090)
 - **MinIO Console (S3 Storage)**: [http://localhost:9001](http://localhost:9001) (minio_admin/minio_secret_key)

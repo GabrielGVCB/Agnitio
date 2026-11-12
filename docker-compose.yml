@@ -41,6 +41,8 @@ services:
     build:
       context: ./vision-service
       dockerfile: Dockerfile
+      network: host
+    image: agnitio-vision-service:latest
     container_name: agnitio-vision-service
     restart: unless-stopped
     environment:
@@ -59,7 +61,7 @@ services:
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-internal-api-key-32chars-min}
     ports:
-      - "${VISION_SERVICE_PORT:-8000}:8000"
+      - "${VISION_SERVICE_PORT:-8001}:8000"
     depends_on:
       postgres-vision:
         condition: service_healthy
