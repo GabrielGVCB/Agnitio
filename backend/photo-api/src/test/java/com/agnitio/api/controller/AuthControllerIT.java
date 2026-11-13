@@ -2,7 +2,7 @@ package com.agnitio.api.controller;
 
 import com.agnitio.api.controller.dto.LoginRequestDto;
 import com.agnitio.api.controller.dto.RegisterRequestDto;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -90,7 +90,7 @@ class AuthControllerIT {
                 .andReturn();
 
         String responseJson = loginResult.getResponse().getContentAsString();
-        String accessToken = objectMapper.readTree(responseJson).get("accessToken").asText();
+        String accessToken = objectMapper.readTree(responseJson).get("accessToken").asString();
         Cookie refreshCookie = loginResult.getResponse().getCookie("refreshToken");
         assertThat(refreshCookie).isNotNull();
 

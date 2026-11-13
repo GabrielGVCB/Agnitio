@@ -20,6 +20,7 @@ interface FileUploadTask {
 
 const MAX_CONCURRENT_UPLOADS = 3;
 const MAX_RETRIES = 2;
+const PROCESSING_STALL_TIMEOUT_MS = 60_000;
 
 export default function EventPhotoUploadPage({
   params,
@@ -37,17 +38,33 @@ export default function EventPhotoUploadPage({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [processingProgress, setProcessingProgress] = useState<EventProgressDto | null>(null);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processingStalled, setProcessingStalled] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
     };
   }, []);
+
+  // Warn the photographer when processing makes no progress for a while
+  // (e.g. image-worker down), instead of spinning forever.
+  const processedCount = processingProgress?.processed ?? 0;
+  const failedProcessingCount = processingProgress?.failed ?? 0;
+  useEffect(() => {
+    setProcessingStalled(false);
+    if (!isProcessing) return;
+    const timer = setTimeout(() => setProcessingStalled(true), PROCESSING_STALL_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [isProcessing, processedCount, failedProcessingCount]);
 
   useEffect(() => {
     async function loadEvent() {
@@ -95,23 +112,22 @@ export default function EventPhotoUploadPage({
       const fileNames = pendingTasks.map((t) => ({ fileName: t.name }));
       const urlResponse = await api.photos.requestUploadUrls(eventId, fileNames);
 
-      const urlMap = new Map<string, UploadUrlItem>();
-      urlResponse.items.forEach((item) => {
-        urlMap.set(item.fileName, item);
-      });
 
       // 2. Associate photoId and uploadUrl to each task
       const updatedTasks = [...tasks];
       const tasksToUpload: { task: FileUploadTask; uploadUrl: string; photoId: string }[] = [];
 
-      pendingTasks.forEach((pTask) => {
-        const urlItem = urlMap.get(pTask.name);
-        if (urlItem) {
-          const idx = updatedTasks.findIndex((t) => t.id === pTask.id);
-          if (idx !== -1) {
-            updatedTasks[idx] = { ...updatedTasks[idx], photoId: urlItem.photoId, status: 'PENDING' };
-            tasksToUpload.push({ task: updatedTasks[idx], uploadUrl: urlItem.uploadUrl, photoId: urlItem.photoId });
-          }
+      // The API returns one item per requested file, in request order. Matching by position
+      // (not by file name) keeps duplicate names in the same batch from sharing an upload URL.
+      pendingTasks.forEach((pTask, position) => {
+        const idx = updatedTasks.findIndex((t) => t.id === pTask.id);
+        if (idx === -1) return;
+        const urlItem: UploadUrlItem | undefined = urlResponse.items[position];
+        if (urlItem && urlItem.fileName === pTask.name) {
+          updatedTasks[idx] = { ...updatedTasks[idx], photoId: urlItem.photoId, status: 'PENDING' };
+          tasksToUpload.push({ task: updatedTasks[idx], uploadUrl: urlItem.uploadUrl, photoId: urlItem.photoId });
+        } else {
+          updatedTasks[idx] = { ...updatedTasks[idx], status: 'FAILED', error: 'URL de upload não recebida' };
         }
       });
       setTasks([...updatedTasks]);
@@ -208,6 +224,9 @@ export default function EventPhotoUploadPage({
           es.onerror = () => {
             es.close();
             // Polling fallback
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+            }
             const interval = setInterval(async () => {
               try {
                 const status = await api.photos.getProgress(eventId);
@@ -220,6 +239,7 @@ export default function EventPhotoUploadPage({
                 clearInterval(interval);
               }
             }, 1500);
+            pollingIntervalRef.current = interval;
           };
         } catch {
           // If SSE connection fails, fallback to polling
@@ -418,6 +438,17 @@ export default function EventPhotoUploadPage({
               />
             </div>
           </div>
+
+          {processingStalled && !processingProgress?.completed && (
+            <div className="pt-2 border-t border-[#ffb020]/30 text-xs font-hud text-[#ffb020] flex items-start space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                O processamento não avança há mais de 1 minuto. As fotos já estão salvas no storage e serão
+                processadas assim que o image-worker estiver no ar. Verifique se ele está rodando
+                (scripts/run-backend.sh image-worker).
+              </span>
+            </div>
+          )}
 
           {processingProgress?.completed && (
             <div className="pt-2 flex items-center justify-between border-t border-[#5ec8ff]/20">

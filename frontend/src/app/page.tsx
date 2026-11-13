@@ -156,7 +156,7 @@ export default function HomePage() {
           <div className="relative z-10 flex-1 flex flex-col items-center justify-center my-auto max-w-2xl mx-auto w-full text-center px-4">
             
             {/* Viewfinder Target Focus Brackets */}
-            <div className="relative w-full max-w-md p-6 sm:p-8 my-4 transition-all duration-700">
+            <div className="relative w-full max-w-xl p-6 sm:p-8 my-4 transition-all duration-700">
               {/* Focus corner brackets */}
               <div className={`absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 transition-colors duration-500 ${focusLocked ? 'border-[#5ec8ff]' : 'border-white/40'}`} />
               <div className={`absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 transition-colors duration-500 ${focusLocked ? 'border-[#5ec8ff]' : 'border-white/40'}`} />
@@ -183,7 +183,7 @@ export default function HomePage() {
 
               {/* Search Box */}
               <div className="flex flex-col sm:flex-row items-center gap-2 bg-[#050d1c]/95 p-2 rounded-[6px] border border-[#5ec8ff]/40 shadow-[0_0_30px_rgba(0,0,0,0.6)]">
-                <div className="relative flex-1 w-full flex items-center">
+                <div className="relative flex-1 min-w-0 w-full flex items-center">
                   <Search className="w-5 h-5 text-[#5ec8ff] absolute left-3 pointer-events-none" />
                   <input
                     type="text"
@@ -196,7 +196,7 @@ export default function HomePage() {
                 <button
                   type="button"
                   onClick={handleSearchClick}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-[4px] bg-[#5ec8ff] hover:bg-[#4cb6ed] text-[#050d1c] font-hud font-bold text-sm flex items-center justify-center space-x-2 transition shadow-[0_0_15px_rgba(94,200,255,0.4)] active:scale-95"
+                  className="w-full sm:w-auto shrink-0 whitespace-nowrap px-5 py-2.5 rounded-[4px] bg-[#5ec8ff] hover:bg-[#4cb6ed] text-[#050d1c] font-hud font-bold text-sm flex items-center justify-center space-x-2 transition shadow-[0_0_15px_rgba(94,200,255,0.4)] active:scale-95"
                 >
                   <Camera className="w-4 h-4 text-[#050d1c]" />
                   <span>Tirar selfie e buscar</span>

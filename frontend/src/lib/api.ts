@@ -42,6 +42,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v
 
 let authToken: string | null = null;
 
+export const AUTH_CHANGE_EVENT = 'agnitio:auth-change';
+
 export const setAuthToken = (token: string | null) => {
   authToken = token;
   if (typeof window !== 'undefined') {
@@ -50,6 +52,7 @@ export const setAuthToken = (token: string | null) => {
     } else {
       localStorage.removeItem('agnitio_token');
     }
+    window.dispatchEvent(new Event(AUTH_CHANGE_EVENT));
   }
 };
 

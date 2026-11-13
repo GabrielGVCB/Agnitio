@@ -6,7 +6,7 @@ import com.agnitio.api.controller.dto.RegisterRequestDto;
 import com.agnitio.api.controller.dto.UpdateEventRequestDto;
 import com.agnitio.domain.event.EventType;
 import com.agnitio.domain.event.EventVisibility;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,7 +76,7 @@ class EventControllerIT {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asText();
+        token = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("accessToken").asString();
     }
 
     @Test
@@ -103,7 +103,7 @@ class EventControllerIT {
                 .andExpect(jsonPath("$.biometricRetentionDays").value(120))
                 .andReturn();
 
-        String eventId = objectMapper.readTree(createResult.getResponse().getContentAsString()).get("id").asText();
+        String eventId = objectMapper.readTree(createResult.getResponse().getContentAsString()).get("id").asString();
 
         // 2. List Events
         mockMvc.perform(get("/api/v1/events")

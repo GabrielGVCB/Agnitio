@@ -10,13 +10,20 @@ export default function NewEventPage() {
   const [type, setType] = useState<EventType>("RACE");
   const [visibility, setVisibility] = useState<EventVisibility>("PUBLIC");
   const [accessCode, setAccessCode] = useState("");
-  const [retentionDays, setRetentionDays] = useState(90);
+  const [retentionDays, setRetentionDays] = useState("90");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const parsedRetentionDays = Number.parseInt(retentionDays, 10);
+    if (!Number.isInteger(parsedRetentionDays) || parsedRetentionDays < 1 || parsedRetentionDays > 365) {
+      setError("O prazo de retenção deve ser entre 1 e 365 dias.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -25,7 +32,7 @@ export default function NewEventPage() {
         type,
         visibility,
         accessCode: visibility === "PRIVATE" ? accessCode : undefined,
-        biometricRetentionDays: Number(retentionDays),
+        biometricRetentionDays: parsedRetentionDays,
       });
       router.push("/dashboard");
     } catch (err: unknown) {
@@ -125,12 +132,13 @@ export default function NewEventPage() {
           </label>
           <div className="flex items-center space-x-3 mt-1">
             <input
-              type="number"
-              min={1}
-              max={365}
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={3}
               required
               value={retentionDays}
-              onChange={(e) => setRetentionDays(Number(e.target.value))}
+              onChange={(e) => setRetentionDays(e.target.value.replace(/\D/g, "").replace(/^0+(?=\d)/, ""))}
               className="w-32 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <span className="text-sm text-slate-400">dias após o evento</span>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, EventDto, Photographer } from "@/lib/api";
+import { api, EventDto, Photographer, setAuthToken } from "@/lib/api";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function DashboardPage() {
         if (err instanceof Error) {
           setError(err.message);
         }
+        setAuthToken(null);
         router.push("/login");
       } finally {
         setLoading(false);

@@ -201,6 +201,6 @@ class EventPhotoControllerIT {
                         .file(file)
                         .param("consent", "false"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("BIOMETRIC_CONSENT_REQUIRED"));
+                .andExpect(jsonPath("$.error").value("BIOMETRIC_CONSENT_REQUIRED"));
     }
 }
