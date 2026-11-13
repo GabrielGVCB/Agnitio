@@ -187,6 +187,7 @@ Atualize esta seção conforme os comandos forem criados.
 ```bash
 docker compose up -d                 # infraestrutura local (inclui Grafana :3001, Prometheus :9090, Tempo :3200, Loki :3100)
 cd backend && ./mvnw verify          # build + testes Java
+cd backend && ./mvnw verify -DskipITs   # rápido: só unitários + ArchUnit (sem Testcontainers)
 scripts/run-backend.sh photo-api     # roda a API local com o .env carregado (idem: image-worker)
 cd vision-service && pytest          # testes Python
 cd frontend && npm run dev           # frontend local
