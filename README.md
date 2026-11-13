@@ -41,6 +41,10 @@ docker compose up -d
 # Compilar e rodar todos os testes do backend (incluindo ArchUnit e Testcontainers)
 cd backend && ./mvnw verify
 
+# Rodar a API e o worker localmente (carrega o .env da raiz antes do spring-boot:run)
+scripts/run-backend.sh photo-api
+scripts/run-backend.sh image-worker
+
 # Rodar testes do serviço de visão computacional
 cd vision-service && pytest
 
