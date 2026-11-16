@@ -3,6 +3,7 @@ package com.agnitio.api.controller.dto;
 import com.agnitio.domain.event.Event;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record EventResponseDto(
@@ -14,6 +15,8 @@ public record EventResponseDto(
         boolean hasAccessCode,
         int biometricRetentionDays,
         String status,
+        LocalDate eventDate,
+        String city,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -27,6 +30,8 @@ public record EventResponseDto(
                 event.getAccessCode() != null && !event.getAccessCode().isBlank(),
                 event.getBiometricRetentionDays(),
                 event.getStatus().name(),
+                event.getEventDate(),
+                event.getCity(),
                 event.getCreatedAt(),
                 event.getUpdatedAt()
         );

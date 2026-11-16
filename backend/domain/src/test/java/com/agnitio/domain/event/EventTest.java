@@ -3,6 +3,8 @@ package com.agnitio.domain.event;
 import com.agnitio.domain.photographer.PhotographerId;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -20,7 +22,9 @@ class EventTest {
                 EventType.RACE,
                 EventVisibility.PUBLIC,
                 null,
-                90
+                90,
+                null,
+                null
         );
 
         assertThat(event.getId()).isEqualTo(eventId);
@@ -46,7 +50,9 @@ class EventTest {
                 EventType.WEDDING,
                 EventVisibility.PRIVATE,
                 "SECRET123",
-                30
+                30,
+                null,
+                null
         );
 
         assertThat(event.getVisibility()).isEqualTo(EventVisibility.PRIVATE);
@@ -68,7 +74,9 @@ class EventTest {
                 EventType.WEDDING,
                 EventVisibility.PRIVATE,
                 "  ",
-                30
+                30,
+                null,
+                null
         )).isInstanceOf(InvalidEventException.class)
                 .hasMessageContaining("Access code is required for private events");
     }
@@ -85,7 +93,9 @@ class EventTest {
                 EventType.OTHER,
                 EventVisibility.PUBLIC,
                 null,
-                0
+                0,
+                null,
+                null
         )).isInstanceOf(InvalidEventException.class)
                 .hasMessageContaining("Biometric retention days must be at least 1");
     }
@@ -99,7 +109,9 @@ class EventTest {
                 EventType.GRADUATION,
                 EventVisibility.PUBLIC,
                 null,
-                60
+                60,
+                null,
+                null
         );
 
         event.archive();
@@ -108,5 +120,96 @@ class EventTest {
         assertThatThrownBy(event::archive)
                 .isInstanceOf(InvalidEventException.class)
                 .hasMessageContaining("already archived");
+    }
+    @Test
+    void shouldStoreEventDateAndTrimmedCity() {
+        LocalDate date = LocalDate.of(2026, 5, 12);
+
+        Event event = Event.create(
+                EventId.generate(),
+                PhotographerId.generate(),
+                "City Marathon 2026",
+                EventType.RACE,
+                EventVisibility.PUBLIC,
+                null,
+                90,
+                date,
+                "  Rio de Janeiro, RJ  "
+        );
+
+        assertThat(event.getEventDate()).isEqualTo(date);
+        assertThat(event.getCity()).isEqualTo("Rio de Janeiro, RJ");
+    }
+
+    @Test
+    void shouldNormalizeBlankCityToNull() {
+        Event event = Event.create(
+                EventId.generate(),
+                PhotographerId.generate(),
+                "Festival",
+                EventType.OTHER,
+                EventVisibility.PUBLIC,
+                null,
+                30,
+                null,
+                "   "
+        );
+
+        assertThat(event.getCity()).isNull();
+        assertThat(event.getEventDate()).isNull();
+    }
+
+    @Test
+    void shouldFailWhenCityIsTooLong() {
+        String longCity = "x".repeat(Event.CITY_MAX_LENGTH + 1);
+
+        assertThatThrownBy(() -> Event.create(
+                EventId.generate(),
+                PhotographerId.generate(),
+                "Festival",
+                EventType.OTHER,
+                EventVisibility.PUBLIC,
+                null,
+                30,
+                null,
+                longCity
+        )).isInstanceOf(InvalidEventException.class)
+                .hasMessageContaining("City must be at most");
+    }
+
+    @Test
+    void shouldUpdateEventDateAndCity() {
+        Event event = Event.create(
+                EventId.generate(),
+                PhotographerId.generate(),
+                "Festival",
+                EventType.OTHER,
+                EventVisibility.PUBLIC,
+                null,
+                30,
+                null,
+                null
+        );
+
+        event.update("Festival 2026", EventType.OTHER, EventVisibility.PUBLIC, null, 30,
+                LocalDate.of(2026, 8, 1), "Curitiba, PR");
+
+        assertThat(event.getEventDate()).isEqualTo(LocalDate.of(2026, 8, 1));
+        assertThat(event.getCity()).isEqualTo("Curitiba, PR");
+    }
+
+    @Test
+    void shouldOnlyListActivePublicEvents() {
+        Event publicEvent = Event.create(EventId.generate(), PhotographerId.generate(), "Open Run",
+                EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
+        Event privateEvent = Event.create(EventId.generate(), PhotographerId.generate(), "Wedding",
+                EventType.WEDDING, EventVisibility.PRIVATE, "CODE", 30, null, null);
+        Event archivedEvent = Event.create(EventId.generate(), PhotographerId.generate(), "Old Run",
+                EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
+        archivedEvent.archive();
+
+        assertThat(publicEvent.isPubliclyListed()).isTrue();
+        assertThat(privateEvent.isPubliclyListed()).isFalse();
+        assertThat(archivedEvent.isPubliclyListed()).isFalse();
     }
 }

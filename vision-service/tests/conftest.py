@@ -1,3 +1,8 @@
+import os
+
+# Tests must not depend on whether InsightFace (and its ~280 MB model) is installed locally.
+os.environ.setdefault("FACE_ENGINE_TYPE", "deterministic")
+
 import io
 import pytest
 from PIL import Image, ImageDraw

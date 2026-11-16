@@ -26,6 +26,8 @@ export interface EventDto {
   hasAccessCode: boolean;
   biometricRetentionDays: number;
   status: EventStatus;
+  eventDate: string | null;
+  city: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +38,24 @@ export interface CreateEventInput {
   visibility: EventVisibility;
   accessCode?: string;
   biometricRetentionDays: number;
+  eventDate?: string | null;
+  city?: string | null;
+}
+
+/** Event data exposed to anonymous participants by the public search. */
+export interface PublicEventSummary {
+  id: string;
+  name: string;
+  type: EventType;
+  eventDate: string | null;
+  city: string | null;
+}
+
+export interface PublicEventSearchResponse {
+  items: PublicEventSummary[];
+  page: number;
+  size: number;
+  hasNext: boolean;
 }
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
@@ -186,6 +206,14 @@ export const api = {
 
     async get(id: string) {
       return fetchClient<EventDto>(`/events/${id}`);
+    },
+
+    async searchPublic(query?: string, page = 0, size = 12) {
+      const params = new URLSearchParams({ page: String(page), size: String(size) });
+      if (query && query.trim()) {
+        params.set('query', query.trim());
+      }
+      return fetchClient<PublicEventSearchResponse>(`/events/public?${params.toString()}`);
     },
 
     async getPublic(id: string, code?: string) {

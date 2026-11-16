@@ -60,7 +60,9 @@ class CreateEventUseCaseTest {
                 EventType.RACE,
                 EventVisibility.PUBLIC,
                 null,
-                60
+                60,
+                null,
+                null
         );
 
         Event event = useCase.execute(command);
@@ -82,7 +84,9 @@ class CreateEventUseCaseTest {
                 EventType.RACE,
                 EventVisibility.PUBLIC,
                 null,
-                60
+                60,
+                null,
+                null
         );
 
         assertThatThrownBy(() -> useCase.execute(command))

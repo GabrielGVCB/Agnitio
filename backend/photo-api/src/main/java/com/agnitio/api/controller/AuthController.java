@@ -80,7 +80,7 @@ public class AuthController {
             @RequestBody @Valid LoginRequestDto request,
             HttpServletRequest servletRequest
     ) {
-        String clientIp = extractClientIp(servletRequest);
+        String clientIp = ClientIpResolver.resolve(servletRequest);
         if (!rateLimiter.tryAcquire("login:" + clientIp, 10, Duration.ofMinutes(1))) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).build();
         }
@@ -166,11 +166,4 @@ public class AuthController {
                 .build();
     }
 
-    private String extractClientIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
-    }
 }

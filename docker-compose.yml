@@ -41,7 +41,6 @@ services:
     build:
       context: ./vision-service
       dockerfile: Dockerfile
-      network: host
     image: agnitio-vision-service:latest
     container_name: agnitio-vision-service
     restart: unless-stopped
@@ -60,8 +59,13 @@ services:
       S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minio_admin}
       S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minio_secret_key}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-local-dev-internal-api-key-32chars-min}
+      # Real face recognition; the service refuses to start if InsightFace cannot be loaded.
+      FACE_ENGINE_TYPE: ${FACE_ENGINE_TYPE:-insightface}
     ports:
       - "${VISION_SERVICE_PORT:-8001}:8000"
+    volumes:
+      # InsightFace downloads the buffalo_l model (~280 MB) on first start; keep it across recreations.
+      - insightface_models:/root/.insightface
     depends_on:
       postgres-vision:
         condition: service_healthy
@@ -224,3 +228,4 @@ volumes:
   tempo_data:
   loki_data:
   grafana_data:
+  insightface_models:

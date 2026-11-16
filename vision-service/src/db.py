@@ -1,5 +1,7 @@
+import asyncio
 import json
 import logging
+import threading
 from typing import Any
 import asyncpg
 from pgvector.asyncpg import register_vector
@@ -7,22 +9,31 @@ from src.config import settings
 
 logger = logging.getLogger(__name__)
 
-_pool: asyncpg.Pool | None = None
+# One pool per event loop. An asyncpg pool is bound to the loop that created it: the HTTP API
+# runs on uvicorn's loop while the RabbitMQ consumer runs its own loop in a separate thread.
+# Sharing a single pool between them fails ("another operation is in progress") and, under
+# uvloop, can crash the whole process with a segmentation fault.
+_pools: dict[asyncio.AbstractEventLoop, asyncpg.Pool] = {}
+_pools_lock = threading.Lock()
+
+
+async def _init_connection(conn: asyncpg.Connection) -> None:
+    await register_vector(conn)
 
 
 async def get_db_pool() -> asyncpg.Pool:
-    global _pool
-    if _pool is None:
-        async def init_connection(conn: asyncpg.Connection):
-            await register_vector(conn)
-
-        _pool = await asyncpg.create_pool(
+    loop = asyncio.get_running_loop()
+    pool = _pools.get(loop)
+    if pool is None:
+        pool = await asyncpg.create_pool(
             settings.database_url,
-            init=init_connection,
-            min_size=2,
+            init=_init_connection,
+            min_size=1,
             max_size=10
         )
-    return _pool
+        with _pools_lock:
+            _pools[loop] = pool
+    return pool
 
 
 async def init_db() -> None:
@@ -51,10 +62,11 @@ async def init_db() -> None:
 
 
 async def close_db() -> None:
-    global _pool
-    if _pool is not None:
-        await _pool.close()
-        _pool = None
+    """Closes the pool that belongs to the current event loop."""
+    with _pools_lock:
+        pool = _pools.pop(asyncio.get_running_loop(), None)
+    if pool is not None:
+        await pool.close()
         logger.info("Database pool closed.")
 
 

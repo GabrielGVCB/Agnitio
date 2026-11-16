@@ -3,9 +3,12 @@ package com.agnitio.domain.event;
 import com.agnitio.domain.photographer.PhotographerId;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Objects;
 
 public class Event {
+    public static final int CITY_MAX_LENGTH = 120;
+
     private final EventId id;
     private final PhotographerId photographerId;
     private String name;
@@ -14,6 +17,8 @@ public class Event {
     private String accessCode;
     private int biometricRetentionDays;
     private EventStatus status;
+    private LocalDate eventDate;
+    private String city;
     private final Instant createdAt;
     private Instant updatedAt;
 
@@ -27,7 +32,9 @@ public class Event {
             int biometricRetentionDays,
             EventStatus status,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            LocalDate eventDate,
+            String city
     ) {
         this.id = Objects.requireNonNull(id, "id must not be null");
         this.photographerId = Objects.requireNonNull(photographerId, "photographerId must not be null");
@@ -39,6 +46,8 @@ public class Event {
         this.status = Objects.requireNonNull(status, "status must not be null");
         this.createdAt = Objects.requireNonNull(createdAt, "createdAt must not be null");
         this.updatedAt = Objects.requireNonNull(updatedAt, "updatedAt must not be null");
+        this.eventDate = eventDate;
+        this.city = validateCity(city);
     }
 
     public static Event create(
@@ -48,7 +57,9 @@ public class Event {
             EventType type,
             EventVisibility visibility,
             String accessCode,
-            int biometricRetentionDays
+            int biometricRetentionDays,
+            LocalDate eventDate,
+            String city
     ) {
         Instant now = Instant.now();
         return new Event(
@@ -61,7 +72,9 @@ public class Event {
                 biometricRetentionDays,
                 EventStatus.ACTIVE,
                 now,
-                now
+                now,
+                eventDate,
+                city
         );
     }
 
@@ -70,13 +83,17 @@ public class Event {
             EventType type,
             EventVisibility visibility,
             String accessCode,
-            int biometricRetentionDays
+            int biometricRetentionDays,
+            LocalDate eventDate,
+            String city
     ) {
         this.name = validateName(name);
         this.type = Objects.requireNonNull(type, "type must not be null");
         this.visibility = Objects.requireNonNull(visibility, "visibility must not be null");
         this.accessCode = validateAccessCode(visibility, accessCode);
         this.biometricRetentionDays = validateRetentionDays(biometricRetentionDays);
+        this.eventDate = eventDate;
+        this.city = validateCity(city);
         this.updatedAt = Instant.now();
     }
 
@@ -86,6 +103,14 @@ public class Event {
         }
         this.status = EventStatus.ARCHIVED;
         this.updatedAt = Instant.now();
+    }
+
+    /**
+     * Whether participants may discover this event through the public search.
+     * Private events are only reachable through the link shared by the photographer.
+     */
+    public boolean isPubliclyListed() {
+        return this.visibility == EventVisibility.PUBLIC && this.status == EventStatus.ACTIVE;
     }
 
     public boolean isOwnedBy(PhotographerId photographerId) {
@@ -114,6 +139,17 @@ public class Event {
             return accessCode.trim();
         }
         return null;
+    }
+
+    private static String validateCity(String city) {
+        if (city == null || city.isBlank()) {
+            return null;
+        }
+        String trimmed = city.trim();
+        if (trimmed.length() > CITY_MAX_LENGTH) {
+            throw new InvalidEventException("City must be at most " + CITY_MAX_LENGTH + " characters");
+        }
+        return trimmed;
     }
 
     private static int validateRetentionDays(int days) {
@@ -153,6 +189,14 @@ public class Event {
 
     public EventStatus getStatus() {
         return status;
+    }
+
+    public LocalDate getEventDate() {
+        return eventDate;
+    }
+
+    public String getCity() {
+        return city;
     }
 
     public Instant getCreatedAt() {

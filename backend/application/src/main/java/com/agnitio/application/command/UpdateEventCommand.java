@@ -5,6 +5,7 @@ import com.agnitio.domain.event.EventType;
 import com.agnitio.domain.event.EventVisibility;
 import com.agnitio.domain.photographer.PhotographerId;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
 public record UpdateEventCommand(
@@ -14,7 +15,9 @@ public record UpdateEventCommand(
         EventType type,
         EventVisibility visibility,
         String accessCode,
-        int biometricRetentionDays
+        int biometricRetentionDays,
+        LocalDate eventDate,
+        String city
 ) {
     public UpdateEventCommand {
         Objects.requireNonNull(eventId, "eventId must not be null");

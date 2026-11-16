@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -48,6 +49,12 @@ public class EventJpaEntity {
     @Column(name = "status", nullable = false, length = 50)
     private EventStatus status;
 
+    @Column(name = "event_date")
+    private LocalDate eventDate;
+
+    @Column(name = "city", length = 120)
+    private String city;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -67,7 +74,9 @@ public class EventJpaEntity {
             int biometricRetentionDays,
             EventStatus status,
             Instant createdAt,
-            Instant updatedAt
+            Instant updatedAt,
+            LocalDate eventDate,
+            String city
     ) {
         this.id = id;
         this.photographerId = photographerId;
@@ -79,6 +88,8 @@ public class EventJpaEntity {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.eventDate = eventDate;
+        this.city = city;
     }
 
     public static EventJpaEntity fromDomain(Event event) {
@@ -92,7 +103,9 @@ public class EventJpaEntity {
                 event.getBiometricRetentionDays(),
                 event.getStatus(),
                 event.getCreatedAt(),
-                event.getUpdatedAt()
+                event.getUpdatedAt(),
+                event.getEventDate(),
+                event.getCity()
         );
     }
 
@@ -107,7 +120,9 @@ public class EventJpaEntity {
                 this.biometricRetentionDays,
                 this.status,
                 this.createdAt,
-                this.updatedAt
+                this.updatedAt,
+                this.eventDate,
+                this.city
         );
     }
 
@@ -173,6 +188,22 @@ public class EventJpaEntity {
 
     public void setStatus(EventStatus status) {
         this.status = status;
+    }
+
+    public LocalDate getEventDate() {
+        return eventDate;
+    }
+
+    public void setEventDate(LocalDate eventDate) {
+        this.eventDate = eventDate;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
     }
 
     public Instant getCreatedAt() {

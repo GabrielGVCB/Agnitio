@@ -166,7 +166,9 @@ class PhotoProcessingIntegrationTest {
                 30,
                 com.agnitio.domain.event.EventStatus.ACTIVE,
                 now,
-                now
+                now,
+                null,
+                null
         ));
     }
 

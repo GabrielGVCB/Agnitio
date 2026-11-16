@@ -154,28 +154,45 @@ class InsightFaceEngine(FaceEngine):
 
 _face_engine_instance: FaceEngine | None = None
 
+VALID_ENGINE_TYPES = ("auto", "insightface", "deterministic")
 
-def get_face_engine(engine_type: str = "auto") -> FaceEngine:
-    global _face_engine_instance
-    if _face_engine_instance is not None:
-        return _face_engine_instance
+
+def create_face_engine(engine_type: str) -> FaceEngine:
+    """
+    Builds the configured face engine.
+
+    - "insightface": real face detection/recognition. Fails loudly if it cannot be loaded,
+      instead of silently degrading to a fake engine (that would make selfie search
+      return wrong results without any visible error).
+    - "deterministic": hash-based fake engine for tests/CI only; it does NOT detect faces.
+    - "auto": InsightFace when installed, otherwise the deterministic engine (with a warning).
+    """
+    if engine_type not in VALID_ENGINE_TYPES:
+        raise ValueError(f"Invalid FACE_ENGINE_TYPE '{engine_type}'. Expected one of {VALID_ENGINE_TYPES}.")
 
     if engine_type == "insightface":
-        try:
-            _face_engine_instance = InsightFaceEngine()
-            return _face_engine_instance
-        except Exception as e:
-            logger.warning(f"Could not load InsightFace, falling back to DeterministicFaceEngine: {e}")
+        return InsightFaceEngine()
 
-    if engine_type == "auto":
-        try:
-            import insightface  # noqa: F401
-            _face_engine_instance = InsightFaceEngine()
-            return _face_engine_instance
-        except (ImportError, Exception):
-            logger.info("Using DeterministicFaceEngine for facial embeddings.")
-            _face_engine_instance = DeterministicFaceEngine()
-            return _face_engine_instance
+    if engine_type == "deterministic":
+        logger.warning("Using DeterministicFaceEngine: it does NOT detect real faces (tests/CI only).")
+        return DeterministicFaceEngine()
 
-    _face_engine_instance = DeterministicFaceEngine()
+    try:
+        return InsightFaceEngine()
+    except Exception as e:
+        logger.warning(
+            f"InsightFace unavailable ({e}); falling back to DeterministicFaceEngine, "
+            "which does NOT detect real faces. Set FACE_ENGINE_TYPE=insightface in real environments."
+        )
+        return DeterministicFaceEngine()
+
+
+def get_face_engine(engine_type: str | None = None) -> FaceEngine:
+    """Returns the process-wide engine, creating it from FACE_ENGINE_TYPE on first use."""
+    global _face_engine_instance
+    if _face_engine_instance is None:
+        if engine_type is None:
+            from src.config import settings
+            engine_type = settings.FACE_ENGINE_TYPE
+        _face_engine_instance = create_face_engine(engine_type)
     return _face_engine_instance

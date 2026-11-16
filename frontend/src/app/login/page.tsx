@@ -32,10 +32,15 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto my-12 p-8 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
-      <h2 className="text-2xl font-bold text-white text-center">Entrar no Agnitio</h2>
+      <h2 className="text-2xl font-bold text-white text-center">Área do Fotógrafo</h2>
       <p className="mt-2 text-sm text-slate-400 text-center">
         Painel exclusivo para fotógrafos e organizadores.
       </p>
+
+      <div className="mt-4 p-3 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sm text-sky-200 text-center">
+        Quer só encontrar suas fotos? Você não precisa de conta.{" "}
+        <a href="/" className="font-medium underline hover:text-white">Busque o seu evento</a>.
+      </div>
 
       {error && (
         <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm text-center">
@@ -78,7 +83,7 @@ export default function LoginPage() {
       </form>
 
       <p className="mt-6 text-center text-sm text-slate-400">
-        Não possui uma conta?{" "}
+        É fotógrafo e ainda não tem conta?{" "}
         <a href="/register" className="text-indigo-400 hover:underline font-medium">
           Cadastre-se aqui
         </a>

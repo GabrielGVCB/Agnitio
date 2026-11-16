@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
+
 public record CreateEventRequestDto(
         @NotBlank(message = "Event name is required")
         @Size(max = 150, message = "Event name must be at most 150 characters")
@@ -21,6 +23,11 @@ public record CreateEventRequestDto(
         String accessCode,
 
         @Min(value = 1, message = "Biometric retention days must be at least 1")
-        int biometricRetentionDays
+        int biometricRetentionDays,
+
+        LocalDate eventDate,
+
+        @Size(max = 120, message = "City must be at most 120 characters")
+        String city
 ) {
 }

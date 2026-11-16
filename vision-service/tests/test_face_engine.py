@@ -1,5 +1,8 @@
 import numpy as np
-from src.face_engine import DeterministicFaceEngine, l2_normalize
+import pytest
+
+from src import face_engine as face_engine_module
+from src.face_engine import DeterministicFaceEngine, create_face_engine, get_face_engine, l2_normalize
 
 
 def test_l2_normalize():
@@ -36,3 +39,39 @@ def test_deterministic_face_engine_empty_image(empty_image_bytes):
     engine = DeterministicFaceEngine(dimension=512)
     faces = engine.detect_and_extract_faces(empty_image_bytes)
     assert len(faces) == 0
+
+
+class _BrokenInsightFace:
+    def __init__(self, *args, **kwargs):
+        raise RuntimeError("model not available")
+
+
+def test_insightface_mode_fails_loudly_instead_of_falling_back(monkeypatch):
+    monkeypatch.setattr(face_engine_module, "InsightFaceEngine", _BrokenInsightFace)
+
+    with pytest.raises(RuntimeError, match="model not available"):
+        create_face_engine("insightface")
+
+
+def test_auto_mode_falls_back_to_deterministic_when_insightface_unavailable(monkeypatch):
+    monkeypatch.setattr(face_engine_module, "InsightFaceEngine", _BrokenInsightFace)
+
+    assert isinstance(create_face_engine("auto"), DeterministicFaceEngine)
+
+
+def test_deterministic_mode():
+    assert isinstance(create_face_engine("deterministic"), DeterministicFaceEngine)
+
+
+def test_invalid_engine_type_is_rejected():
+    with pytest.raises(ValueError, match="Invalid FACE_ENGINE_TYPE"):
+        create_face_engine("magic")
+
+
+def test_get_face_engine_uses_configured_type(monkeypatch):
+    from src.config import settings
+
+    monkeypatch.setattr(face_engine_module, "_face_engine_instance", None)
+    monkeypatch.setattr(settings, "FACE_ENGINE_TYPE", "deterministic")
+
+    assert isinstance(get_face_engine(), DeterministicFaceEngine)

@@ -54,7 +54,7 @@ class ConfirmPhotoUploadUseCaseTest {
     void shouldSuccessfullyConfirmUploads() {
         PhotographerId photographerId = PhotographerId.generate();
         EventId eventId = EventId.generate();
-        Event event = Event.create(eventId, photographerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30);
+        Event event = Event.create(eventId, photographerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
 
         PhotoId photoId1 = PhotoId.generate();
         PhotoId photoId2 = PhotoId.generate();
@@ -80,7 +80,7 @@ class ConfirmPhotoUploadUseCaseTest {
     void shouldBeIdempotentForAlreadyUploadedPhotos() {
         PhotographerId photographerId = PhotographerId.generate();
         EventId eventId = EventId.generate();
-        Event event = Event.create(eventId, photographerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30);
+        Event event = Event.create(eventId, photographerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
 
         PhotoId photoId1 = PhotoId.generate();
         Photo photo1 = new Photo(photoId1, eventId, "run1.jpg", Instant.now(), PhotoStatus.UPLOADED);
@@ -102,7 +102,7 @@ class ConfirmPhotoUploadUseCaseTest {
         PhotographerId ownerId = PhotographerId.generate();
         PhotographerId intruderId = PhotographerId.generate();
         EventId eventId = EventId.generate();
-        Event event = Event.create(eventId, ownerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30);
+        Event event = Event.create(eventId, ownerId, "Marathon", EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
 

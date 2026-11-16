@@ -51,7 +51,7 @@ agnitio/
 
 ## Serviços
 
-**photo-api** — API REST. Autenticação, fotógrafos, eventos, URLs pré-assinadas de upload, galeria, busca por selfie (orquestra a chamada ao vision-service), progresso via SSE.
+**photo-api** — API REST. Autenticação, fotógrafos, eventos, busca pública de eventos (sem login, só eventos públicos; ADR 0005), URLs pré-assinadas de upload, galeria, busca por selfie (orquestra a chamada ao vision-service), progresso via SSE.
 
 **image-worker** — Consome `photo.uploaded`. Gera thumbnail, preview com marca d'água e extrai EXIF. Salva as variantes no storage, atualiza o status da foto e publica `photo.processed`. Reutiliza os módulos `domain`, `application` e `infrastructure`.
 

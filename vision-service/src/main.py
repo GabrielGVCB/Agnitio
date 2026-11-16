@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from src.api import router as faces_router
 from src.db import close_db, init_db
+from src.face_engine import get_face_engine
 from src.messaging import start_messaging, stop_messaging
 
 logging.basicConfig(
@@ -15,6 +16,11 @@ logger = logging.getLogger("vision-service")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Initializing vision-service database and messaging...")
+    # Load the face engine eagerly: with FACE_ENGINE_TYPE=insightface a broken install or a
+    # missing model must stop the service at startup, not surface later as wrong search results.
+    engine = get_face_engine()
+    logger.info(f"Face engine ready: {type(engine).__name__}")
+
     try:
         await init_db()
     except Exception as e:

@@ -156,7 +156,7 @@ public class EventPhotoController {
             throw new IllegalArgumentException("Selfie image file is required");
         }
 
-        String clientIp = resolveClientIp(request);
+        String clientIp = ClientIpResolver.resolve(request);
         byte[] bytes = file.getBytes();
         String filename = file.getOriginalFilename();
 
@@ -183,16 +183,6 @@ public class EventPhotoController {
         return ResponseEntity.ok(new SearchSelfieResponseDto(eventId, items.size(), items));
     }
 
-    private String resolveClientIp(HttpServletRequest request) {
-        if (request == null) {
-            return "127.0.0.1";
-        }
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "127.0.0.1";
-    }
 
     private UUID validatePhotographerId(String photographerIdStr) {
         if (photographerIdStr == null || photographerIdStr.isBlank()) {
