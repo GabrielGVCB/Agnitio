@@ -52,7 +52,7 @@ class RequestUploadUrlsUseCaseTest {
     void shouldSuccessfullyGeneratePresignedUrls() {
         PhotographerId photographerId = PhotographerId.generate();
         EventId eventId = EventId.generate();
-        Event event = Event.create(eventId, photographerId, "10K Run", EventType.RACE, EventVisibility.PUBLIC, null, 30);
+        Event event = Event.create(eventId, photographerId, "10K Run", EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(photoStorage.generatePresignedUploadUrl(any(), any(Duration.class)))
@@ -83,7 +83,7 @@ class RequestUploadUrlsUseCaseTest {
         PhotographerId ownerId = PhotographerId.generate();
         PhotographerId intruderId = PhotographerId.generate();
         EventId eventId = EventId.generate();
-        Event event = Event.create(eventId, ownerId, "10K Run", EventType.RACE, EventVisibility.PUBLIC, null, 30);
+        Event event = Event.create(eventId, ownerId, "10K Run", EventType.RACE, EventVisibility.PUBLIC, null, 30, null, null);
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
 

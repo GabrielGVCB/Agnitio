@@ -2,13 +2,16 @@ package com.agnitio.api.controller;
 
 import com.agnitio.api.controller.dto.CreateEventRequestDto;
 import com.agnitio.api.controller.dto.EventResponseDto;
+import com.agnitio.api.controller.dto.PublicEventSearchResponseDto;
 import com.agnitio.api.controller.dto.UpdateEventRequestDto;
 import com.agnitio.application.command.CreateEventCommand;
 import com.agnitio.application.command.UpdateEventCommand;
+import com.agnitio.application.dto.PublicEventPage;
 import com.agnitio.application.usecase.event.CreateEventUseCase;
 import com.agnitio.application.usecase.event.DeleteEventUseCase;
 import com.agnitio.application.usecase.event.GetEventByIdUseCase;
 import com.agnitio.application.usecase.event.ListPhotographerEventsUseCase;
+import com.agnitio.application.usecase.event.SearchPublicEventsUseCase;
 import com.agnitio.application.usecase.event.UpdateEventUseCase;
 import com.agnitio.domain.event.Event;
 import com.agnitio.domain.event.EventId;
@@ -16,6 +19,7 @@ import com.agnitio.domain.event.EventVisibility;
 import com.agnitio.domain.event.UnauthorizedEventAccessException;
 import com.agnitio.domain.photographer.InvalidCredentialsException;
 import com.agnitio.domain.photographer.PhotographerId;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,19 +47,22 @@ public class EventController {
     private final ListPhotographerEventsUseCase listPhotographerEventsUseCase;
     private final UpdateEventUseCase updateEventUseCase;
     private final DeleteEventUseCase deleteEventUseCase;
+    private final SearchPublicEventsUseCase searchPublicEventsUseCase;
 
     public EventController(
             CreateEventUseCase createEventUseCase,
             GetEventByIdUseCase getEventByIdUseCase,
             ListPhotographerEventsUseCase listPhotographerEventsUseCase,
             UpdateEventUseCase updateEventUseCase,
-            DeleteEventUseCase deleteEventUseCase
+            DeleteEventUseCase deleteEventUseCase,
+            SearchPublicEventsUseCase searchPublicEventsUseCase
     ) {
         this.createEventUseCase = Objects.requireNonNull(createEventUseCase, "createEventUseCase must not be null");
         this.getEventByIdUseCase = Objects.requireNonNull(getEventByIdUseCase, "getEventByIdUseCase must not be null");
         this.listPhotographerEventsUseCase = Objects.requireNonNull(listPhotographerEventsUseCase, "listPhotographerEventsUseCase must not be null");
         this.updateEventUseCase = Objects.requireNonNull(updateEventUseCase, "updateEventUseCase must not be null");
         this.deleteEventUseCase = Objects.requireNonNull(deleteEventUseCase, "deleteEventUseCase must not be null");
+        this.searchPublicEventsUseCase = Objects.requireNonNull(searchPublicEventsUseCase, "searchPublicEventsUseCase must not be null");
     }
 
     @PostMapping
@@ -70,7 +77,9 @@ public class EventController {
                 request.type(),
                 request.visibility(),
                 request.accessCode(),
-                request.biometricRetentionDays()
+                request.biometricRetentionDays(),
+                request.eventDate(),
+                request.city()
         );
 
         Event event = createEventUseCase.execute(command);
@@ -85,6 +94,21 @@ public class EventController {
         List<Event> events = listPhotographerEventsUseCase.execute(photographerId);
         List<EventResponseDto> dtos = events.stream().map(EventResponseDto::fromDomain).toList();
         return ResponseEntity.ok(dtos);
+    }
+
+    /**
+     * Public (no login) search used by participants to find an event by name or city.
+     * Only PUBLIC + ACTIVE events are returned, with no owner or access-code data.
+     */
+    @GetMapping("/public")
+    public ResponseEntity<PublicEventSearchResponseDto> searchPublicEvents(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            HttpServletRequest request
+    ) {
+        PublicEventPage result = searchPublicEventsUseCase.execute(query, page, size, ClientIpResolver.resolve(request));
+        return ResponseEntity.ok(PublicEventSearchResponseDto.fromDomain(result));
     }
 
     @GetMapping("/{id}")
@@ -130,7 +154,9 @@ public class EventController {
                 request.type(),
                 request.visibility(),
                 request.accessCode(),
-                request.biometricRetentionDays()
+                request.biometricRetentionDays(),
+                request.eventDate(),
+                request.city()
         );
 
         Event updated = updateEventUseCase.execute(command);

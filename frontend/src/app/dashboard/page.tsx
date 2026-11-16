@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, EventDto, Photographer, setAuthToken } from "@/lib/api";
+import { formatEventDate } from "@/lib/format";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -113,6 +114,11 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <h3 className="mt-4 text-xl font-bold text-white tracking-tight">{event.name}</h3>
+                {(event.city || event.eventDate) && (
+                  <p className="mt-1 text-sm text-slate-300">
+                    {[event.city, formatEventDate(event.eventDate)].filter(Boolean).join(" · ")}
+                  </p>
+                )}
                 <p className="mt-2 text-xs text-slate-400">
                   Retenção biométrica: <strong>{event.biometricRetentionDays} dias</strong>
                 </p>

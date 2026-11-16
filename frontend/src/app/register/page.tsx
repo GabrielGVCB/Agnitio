@@ -38,6 +38,11 @@ export default function RegisterPage() {
         Comece a criar seus eventos e publicar suas galerias.
       </p>
 
+      <div className="mt-4 p-3 rounded-lg border border-sky-500/30 bg-sky-500/10 text-sm text-sky-200 text-center">
+        Quer só encontrar suas fotos? Você não precisa de conta.{" "}
+        <a href="/" className="font-medium underline hover:text-white">Busque o seu evento</a>.
+      </div>
+
       {error && (
         <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-sm text-center">
           {error}

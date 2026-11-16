@@ -2,34 +2,24 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Camera, Search, ShieldCheck, Zap, Lock, Film, Sparkles, ChevronRight, CheckCircle2 } from 'lucide-react';
-import SelfieSearchModal from '@/components/SelfieSearchModal';
-import { api, EventDto } from '@/lib/api';
+import { Camera, Search, ShieldCheck, Zap, Lock, Film, Sparkles, ChevronRight, CheckCircle2, MapPin, CalendarDays, Loader2 } from 'lucide-react';
+import { api, PublicEventSummary } from '@/lib/api';
+import { eventTypeLabel, formatEventDate } from '@/lib/format';
 
 export default function HomePage() {
   const [seconds, setSeconds] = useState(0);
-  const [consentChecked, setConsentChecked] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [flashActive, setFlashActive] = useState(false);
-  const [consentError, setConsentError] = useState(false);
   const [focusLocked, setFocusLocked] = useState(false);
-  const [isSelfieModalOpen, setIsSelfieModalOpen] = useState(false);
-  const [selectedEventId, setSelectedEventId] = useState<string>('');
-  const [selectedEventName, setSelectedEventName] = useState<string>('');
-  const [realEvents, setRealEvents] = useState<EventDto[]>([]);
+  // null = no search performed yet
+  const [searchResults, setSearchResults] = useState<PublicEventSummary[] | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [featuredEvents, setFeaturedEvents] = useState<PublicEventSummary[]>([]);
 
   useEffect(() => {
-    api.events.list()
-      .then((events) => {
-        if (events && events.length > 0) {
-          setRealEvents(events);
-          setSelectedEventId(events[0].id);
-          setSelectedEventName(events[0].name);
-        }
-      })
-      .catch(() => {
-        // Fallback for public browsing
-      });
+    api.events.searchPublic(undefined, 0, 12)
+      .then((page) => setFeaturedEvents(page.items))
+      .catch(() => setFeaturedEvents([]));
   }, []);
 
   // Timecode counter for the HUD: 00:00:00
@@ -55,41 +45,23 @@ export default function HomePage() {
     return `${h}:${m}:${s}`;
   };
 
-  const handleSearchClick = () => {
-    if (!consentChecked) {
-      setConsentError(true);
-      return;
+  const handleSearchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchLoading(true);
+    setSearchError(null);
+    try {
+      const page = await api.events.searchPublic(searchQuery, 0, 10);
+      setSearchResults(page.items);
+    } catch (err: unknown) {
+      setSearchResults(null);
+      setSearchError(err instanceof Error ? err.message : 'Não foi possível buscar eventos agora.');
+    } finally {
+      setSearchLoading(false);
     }
-    setConsentError(false);
-    setFlashActive(true);
-
-    if (searchQuery.trim() && realEvents.length > 0) {
-      const match = realEvents.find(e => e.name.toLowerCase().includes(searchQuery.toLowerCase().trim()));
-      if (match) {
-        setSelectedEventId(match.id);
-        setSelectedEventName(match.name);
-      }
-    }
-
-    setTimeout(() => {
-      setFlashActive(false);
-      setIsSelfieModalOpen(true);
-    }, 300);
   };
-
-  const sampleEvents = [
-    { id: '1', title: 'Maratona Internacional do Rio', city: 'Rio de Janeiro, RJ', date: '12 Maio 2026', photos: '14.280' },
-    { id: '2', title: 'Circuito das Estações - Outono', city: 'São Paulo, SP', date: '26 Abril 2026', photos: '9.450' },
-    { id: '3', title: 'IronTrack Ultra Trail 50k', city: 'Petrópolis, RJ', date: '18 Abril 2026', photos: '6.120' },
-    { id: '4', title: 'Meia de Floripa 21k', city: 'Florianópolis, SC', date: '04 Abril 2026', photos: '11.890' },
-    { id: '5', title: 'Night Run Sunset 10k', city: 'Belo Horizonte, MG', date: '28 Março 2026', photos: '7.340' },
-  ];
 
   return (
     <div className="relative w-full overflow-hidden">
-      {/* Full screen flash effect */}
-      {flashActive && <div className="camera-flash" />}
-
       {/* 1. Visor Hero (HUD) */}
       <section className="relative px-4 sm:px-6 lg:px-8 pt-4 pb-16 max-w-7xl mx-auto">
         <div className="relative h-[820px] w-full rounded-[6px] border border-[#5ec8ff]/30 bg-[#081530] overflow-hidden shadow-[0_0_50px_rgba(5,13,28,0.9)] flex flex-col justify-between p-4 sm:p-6 select-none">
@@ -181,53 +153,77 @@ export default function HomePage() {
                 </span>
               </p>
 
-              {/* Search Box */}
-              <div className="flex flex-col sm:flex-row items-center gap-2 bg-[#050d1c]/95 p-2 rounded-[6px] border border-[#5ec8ff]/40 shadow-[0_0_30px_rgba(0,0,0,0.6)]">
+              {/* Event Search: participants first find the event, then search their face inside it */}
+              <form
+                onSubmit={handleSearchSubmit}
+                role="search"
+                className="flex flex-col sm:flex-row items-center gap-2 bg-[#050d1c]/95 p-2 rounded-[6px] border border-[#5ec8ff]/40 shadow-[0_0_30px_rgba(0,0,0,0.6)]"
+              >
                 <div className="relative flex-1 min-w-0 w-full flex items-center">
                   <Search className="w-5 h-5 text-[#5ec8ff] absolute left-3 pointer-events-none" />
                   <input
-                    type="text"
+                    type="search"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Nome do evento ou cidade..."
+                    aria-label="Buscar evento por nome ou cidade"
+                    maxLength={100}
                     className="w-full pl-10 pr-4 py-2.5 bg-transparent text-[#e8f4ff] placeholder-[#b9d3ee]/50 text-sm focus:outline-none font-hud"
                   />
                 </div>
                 <button
-                  type="button"
-                  onClick={handleSearchClick}
-                  className="w-full sm:w-auto shrink-0 whitespace-nowrap px-5 py-2.5 rounded-[4px] bg-[#5ec8ff] hover:bg-[#4cb6ed] text-[#050d1c] font-hud font-bold text-sm flex items-center justify-center space-x-2 transition shadow-[0_0_15px_rgba(94,200,255,0.4)] active:scale-95"
+                  type="submit"
+                  disabled={searchLoading}
+                  className="w-full sm:w-auto shrink-0 whitespace-nowrap px-5 py-2.5 rounded-[4px] bg-[#5ec8ff] hover:bg-[#4cb6ed] disabled:opacity-60 text-[#050d1c] font-hud font-bold text-sm flex items-center justify-center space-x-2 transition shadow-[0_0_15px_rgba(94,200,255,0.4)] active:scale-95"
                 >
-                  <Camera className="w-4 h-4 text-[#050d1c]" />
-                  <span>Tirar selfie e buscar</span>
+                  {searchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  <span>Buscar evento</span>
                 </button>
-              </div>
+              </form>
 
-              {/* LGPD Mandatory Consent Checkbox */}
-              <div className={`mt-4 text-left p-2.5 rounded-[4px] transition-all border ${consentError ? 'bg-[#ff4040]/10 border-[#ff4040]' : 'bg-[#050d1c]/50 border-white/10'}`}>
-                <label className="flex items-start space-x-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={consentChecked}
-                    onChange={(e) => {
-                      setConsentChecked(e.target.checked);
-                      if (e.target.checked) setConsentError(false);
-                    }}
-                    className="mt-0.5 w-4 h-4 rounded-[3px] accent-[#5ec8ff] cursor-pointer"
-                  />
-                  <span className="text-xs text-[#b9d3ee] leading-relaxed">
-                    Autorizo o uso da minha selfie exclusivamente para esta busca. Ela e o embedding biométrico são descartados logo em seguida. Leia nosso{' '}
-                    <a href="#privacidade" className="text-[#5ec8ff] underline hover:text-white">
-                      aviso de privacidade (LGPD)
-                    </a>.
-                  </span>
-                </label>
-                {consentError && (
-                  <p className="text-[11px] font-hud text-[#ff4040] mt-1 pl-6">
-                    * É obrigatório autorizar o processamento da selfie para realizar a busca facial.
-                  </p>
-                )}
-              </div>
+              <p className="mt-3 text-xs text-[#b9d3ee]/80">
+                Escolha o seu evento e, na galeria dele, use uma selfie para encontrar suas fotos.
+                Evento privado? Use o link enviado pelo fotógrafo.
+              </p>
+
+              {searchError && (
+                <p role="alert" className="mt-3 text-xs font-hud text-[#ff4040]">{searchError}</p>
+              )}
+
+              {searchResults !== null && !searchError && (
+                <div className="mt-3 text-left bg-[#050d1c]/95 border border-[#5ec8ff]/30 rounded-[6px] max-h-64 overflow-y-auto">
+                  {searchResults.length === 0 ? (
+                    <p className="p-4 text-sm text-[#b9d3ee]">
+                      Nenhum evento público encontrado{searchQuery.trim() ? <> para <strong className="text-white">&ldquo;{searchQuery.trim()}&rdquo;</strong></> : null}.
+                    </p>
+                  ) : (
+                    <ul className="divide-y divide-[#5ec8ff]/15">
+                      {searchResults.map((evt) => (
+                        <li key={evt.id}>
+                          <Link
+                            href={`/events/${evt.id}`}
+                            className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[#5ec8ff]/10 transition group"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-hud font-semibold text-sm text-white truncate group-hover:text-[#5ec8ff]">{evt.name}</p>
+                              <p className="text-xs text-[#b9d3ee] flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                <span>{eventTypeLabel(evt.type)}</span>
+                                {evt.city && (
+                                  <span className="inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{evt.city}</span>
+                                )}
+                                {formatEventDate(evt.eventDate) && (
+                                  <span className="inline-flex items-center gap-1"><CalendarDays className="w-3 h-3" />{formatEventDate(evt.eventDate)}</span>
+                                )}
+                              </p>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-[#5ec8ff] shrink-0" />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -276,9 +272,11 @@ export default function HomePage() {
               Eventos com fotos no ar
             </h2>
           </div>
-          <p className="text-sm text-[#b9d3ee] font-hud mt-2 sm:mt-0">
-            Rolagem contínua • Passe o mouse para pausar
-          </p>
+          {featuredEvents.length >= 4 && (
+            <p className="text-sm text-[#b9d3ee] font-hud mt-2 sm:mt-0">
+              Rolagem contínua • Passe o mouse para pausar
+            </p>
+          )}
         </div>
 
         {/* Film Roll Container */}
@@ -290,30 +288,42 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="animate-marquee flex items-center space-x-6">
-            {[...sampleEvents, ...sampleEvents].map((evt, idx) => (
-              <div
-                key={idx}
-                className="w-80 flex-shrink-0 bg-[#0b1a33] border border-[#5ec8ff]/30 p-5 rounded-[6px] shadow-lg hover:border-[#5ec8ff] transition group"
-              >
-                <div className="flex justify-between items-start text-xs font-hud text-[#5ec8ff] mb-2">
-                  <span>{evt.city}</span>
-                  <span className="bg-[#5ec8ff]/10 px-2 py-0.5 rounded-[3px]">{evt.photos} fotos</span>
-                </div>
-                <h3 className="font-hud font-bold text-lg text-white group-hover:text-[#5ec8ff] transition mb-1 truncate">
-                  {evt.title}
-                </h3>
-                <p className="text-xs text-[#b9d3ee] mb-4 font-mono">{evt.date}</p>
-                <Link
-                  href={`/events/${evt.id}`}
-                  className="w-full inline-flex items-center justify-between text-xs font-hud px-3 py-2 rounded-[4px] bg-[#050d1c] border border-[#5ec8ff]/40 text-[#5ec8ff] group-hover:bg-[#5ec8ff] group-hover:text-[#050d1c] transition font-semibold"
+          {featuredEvents.length === 0 ? (
+            <p className="text-center text-sm text-[#b9d3ee] font-hud py-8">
+              Nenhum evento público no ar ainda.
+            </p>
+          ) : (
+            <div
+              className={
+                featuredEvents.length >= 4
+                  ? 'animate-marquee flex items-center space-x-6'
+                  : 'flex flex-wrap items-center justify-center gap-6 px-4'
+              }
+            >
+              {(featuredEvents.length >= 4 ? [...featuredEvents, ...featuredEvents] : featuredEvents).map((evt, idx) => (
+                <div
+                  key={`${evt.id}-${idx}`}
+                  className="w-80 flex-shrink-0 bg-[#0b1a33] border border-[#5ec8ff]/30 p-5 rounded-[6px] shadow-lg hover:border-[#5ec8ff] transition group"
                 >
-                  <span>Acessar Galeria</span>
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            ))}
-          </div>
+                  <div className="flex justify-between items-start gap-2 text-xs font-hud text-[#5ec8ff] mb-2">
+                    <span className="truncate">{evt.city ?? 'Local não informado'}</span>
+                    <span className="bg-[#5ec8ff]/10 px-2 py-0.5 rounded-[3px] shrink-0">{eventTypeLabel(evt.type)}</span>
+                  </div>
+                  <h3 className="font-hud font-bold text-lg text-white group-hover:text-[#5ec8ff] transition mb-1 truncate">
+                    {evt.name}
+                  </h3>
+                  <p className="text-xs text-[#b9d3ee] mb-4 font-mono">{formatEventDate(evt.eventDate) ?? 'Data não informada'}</p>
+                  <Link
+                    href={`/events/${evt.id}`}
+                    className="w-full inline-flex items-center justify-between text-xs font-hud px-3 py-2 rounded-[4px] bg-[#050d1c] border border-[#5ec8ff]/40 text-[#5ec8ff] group-hover:bg-[#5ec8ff] group-hover:text-[#050d1c] transition font-semibold"
+                  >
+                    <span>Acessar Galeria</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Bottom Film Sprocket Holes */}
           <div className="flex justify-between px-2 mt-3 opacity-30 select-none">
@@ -561,14 +571,6 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* AF-C Biometric Face Search Modal */}
-      <SelfieSearchModal
-        isOpen={isSelfieModalOpen}
-        onClose={() => setIsSelfieModalOpen(false)}
-        eventId={selectedEventId || (realEvents[0]?.id ?? '')}
-        eventName={selectedEventName || (realEvents[0]?.name ?? 'Evento')}
-        initialConsent={consentChecked}
-      />
     </div>
   );
 }

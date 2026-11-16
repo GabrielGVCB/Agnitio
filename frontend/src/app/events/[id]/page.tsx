@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api, EventDto, PhotoGalleryItem } from "@/lib/api";
 import { ArrowLeft, Lock, Image as ImageIcon, Download, ExternalLink, ShieldAlert, Camera } from "lucide-react";
 import SelfieSearchModal from "@/components/SelfieSearchModal";
+import { formatEventDate } from "@/lib/format";
 
 export default function PublicEventPage({
   params,
@@ -141,6 +142,11 @@ export default function PublicEventPage({
           <h1 className="mt-2 text-3xl sm:text-4xl font-hud font-bold text-white tracking-tight">
             {event?.name}
           </h1>
+          {(event?.city || event?.eventDate) && (
+            <p className="mt-1 text-sm text-[#e8f4ff]/80 font-hud">
+              {[event?.city, formatEventDate(event?.eventDate)].filter(Boolean).join(" · ")}
+            </p>
+          )}
           <p className="mt-1 text-xs text-[#b9d3ee] font-hud">
             {photos.length} {photos.length === 1 ? 'foto disponível' : 'fotos disponíveis'} na galeria oficial
           </p>

@@ -18,6 +18,7 @@ import com.agnitio.application.usecase.event.CreateEventUseCase;
 import com.agnitio.application.usecase.event.DeleteEventUseCase;
 import com.agnitio.application.usecase.event.GetEventByIdUseCase;
 import com.agnitio.application.usecase.event.ListPhotographerEventsUseCase;
+import com.agnitio.application.usecase.event.SearchPublicEventsUseCase;
 import com.agnitio.application.usecase.event.UpdateEventUseCase;
 import com.agnitio.application.ports.output.PhotoStorage;
 import com.agnitio.application.usecase.photo.ConfirmPhotoUploadUseCase;
@@ -102,6 +103,14 @@ public class ApplicationConfig {
     @Bean
     public UpdateEventUseCase updateEventUseCase(EventRepository eventRepository) {
         return new UpdateEventUseCase(eventRepository);
+    }
+
+    @Bean
+    public SearchPublicEventsUseCase searchPublicEventsUseCase(
+            EventRepository eventRepository,
+            RateLimiterPort rateLimiter
+    ) {
+        return new SearchPublicEventsUseCase(eventRepository, rateLimiter);
     }
 
     @Bean

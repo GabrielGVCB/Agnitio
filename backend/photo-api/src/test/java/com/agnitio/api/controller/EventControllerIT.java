@@ -23,6 +23,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.LocalDate;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -88,7 +90,9 @@ class EventControllerIT {
                 EventType.RACE,
                 EventVisibility.PUBLIC,
                 null,
-                120
+                120,
+                null,
+                null
         );
 
         MvcResult createResult = mockMvc.perform(post("/api/v1/events")
@@ -122,7 +126,9 @@ class EventControllerIT {
                 EventType.RACE,
                 EventVisibility.PRIVATE,
                 "RIO2026",
-                180
+                180,
+                null,
+                null
         );
 
         mockMvc.perform(put("/api/v1/events/" + eventId)
@@ -151,5 +157,45 @@ class EventControllerIT {
         mockMvc.perform(get("/api/v1/events/" + eventId)
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isNotFound());
+    }
+    @Test
+    @DisplayName("Should search public events anonymously without exposing private events or owner data")
+    void shouldSearchPublicEventsAnonymously() throws Exception {
+        String unique = "Busca" + System.nanoTime();
+
+        CreateEventRequestDto publicEvent = new CreateEventRequestDto(
+                unique + " Maratona", EventType.RACE, EventVisibility.PUBLIC, null, 30,
+                LocalDate.of(2026, 5, 12), "Rio de Janeiro, RJ");
+        CreateEventRequestDto privateEvent = new CreateEventRequestDto(
+                unique + " Casamento", EventType.WEDDING, EventVisibility.PRIVATE, "SECRET", 30,
+                LocalDate.of(2026, 6, 20), "Rio de Janeiro, RJ");
+
+        for (CreateEventRequestDto request : new CreateEventRequestDto[]{publicEvent, privateEvent}) {
+            mockMvc.perform(post("/api/v1/events")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.eventDate").value(request.eventDate().toString()))
+                    .andExpect(jsonPath("$.city").value("Rio de Janeiro, RJ"));
+        }
+
+        // No Authorization header: participants have no account
+        mockMvc.perform(get("/api/v1/events/public").param("query", unique.toLowerCase()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].name").value(unique + " Maratona"))
+                .andExpect(jsonPath("$.items[0].eventDate").value("2026-05-12"))
+                .andExpect(jsonPath("$.items[0].city").value("Rio de Janeiro, RJ"))
+                .andExpect(jsonPath("$.items[0].photographerId").doesNotExist())
+                .andExpect(jsonPath("$.items[0].hasAccessCode").doesNotExist())
+                .andExpect(jsonPath("$.hasNext").value(false));
+    }
+
+    @Test
+    @DisplayName("Should reject public search page size above the limit")
+    void shouldRejectOversizedPublicSearchPage() throws Exception {
+        mockMvc.perform(get("/api/v1/events/public").param("size", "500"))
+                .andExpect(status().isBadRequest());
     }
 }

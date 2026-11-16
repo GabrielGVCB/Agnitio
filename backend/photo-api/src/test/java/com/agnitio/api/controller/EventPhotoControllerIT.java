@@ -96,7 +96,9 @@ class EventPhotoControllerIT {
                 EventType.RACE,
                 EventVisibility.PUBLIC,
                 null,
-                30
+                30,
+                null,
+                null
         );
 
         MvcResult result = mockMvc.perform(post("/api/v1/events")

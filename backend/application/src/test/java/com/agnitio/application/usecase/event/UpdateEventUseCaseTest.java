@@ -47,7 +47,9 @@ class UpdateEventUseCaseTest {
                 EventType.OTHER,
                 EventVisibility.PUBLIC,
                 null,
-                30
+                30,
+                null,
+                null
         );
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
@@ -60,7 +62,9 @@ class UpdateEventUseCaseTest {
                 EventType.CORPORATE,
                 EventVisibility.PRIVATE,
                 "CODE456",
-                45
+                45,
+                null,
+                null
         );
 
         Event updated = useCase.execute(command);
@@ -86,7 +90,9 @@ class UpdateEventUseCaseTest {
                 EventType.OTHER,
                 EventVisibility.PUBLIC,
                 null,
-                30
+                30,
+                null,
+                null
         );
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
@@ -98,7 +104,9 @@ class UpdateEventUseCaseTest {
                 EventType.OTHER,
                 EventVisibility.PUBLIC,
                 null,
-                30
+                30,
+                null,
+                null
         );
 
         assertThatThrownBy(() -> useCase.execute(command))

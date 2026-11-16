@@ -71,20 +71,12 @@ export default function SiteHeader() {
               </button>
             </>
           ) : (
-            <>
-              <Link
-                href="/login"
-                className="text-sm font-hud px-4 py-2 rounded-[4px] border border-[#5ec8ff]/40 text-[#5ec8ff] hover:bg-[#5ec8ff]/10 transition"
-              >
-                Entrar
-              </Link>
-              <Link
-                href="/register"
-                className="hidden sm:inline-block text-sm font-hud px-4 py-2 rounded-[4px] bg-[#5ec8ff] text-[#050d1c] font-semibold hover:bg-[#4ab4eb] transition shadow-[0_0_12px_rgba(94,200,255,0.4)]"
-              >
-                Criar Conta
-              </Link>
-            </>
+            <Link
+              href="/login"
+              className="text-sm font-hud px-4 py-2 rounded-[4px] border border-[#5ec8ff]/40 text-[#5ec8ff] hover:bg-[#5ec8ff]/10 transition"
+            >
+              Área do fotógrafo
+            </Link>
           )}
         </div>
       </div>

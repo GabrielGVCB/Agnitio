@@ -10,6 +10,8 @@ export default function NewEventPage() {
   const [type, setType] = useState<EventType>("RACE");
   const [visibility, setVisibility] = useState<EventVisibility>("PUBLIC");
   const [accessCode, setAccessCode] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [city, setCity] = useState("");
   const [retentionDays, setRetentionDays] = useState("90");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,8 @@ export default function NewEventPage() {
         visibility,
         accessCode: visibility === "PRIVATE" ? accessCode : undefined,
         biometricRetentionDays: parsedRetentionDays,
+        eventDate: eventDate || null,
+        city: city.trim() || null,
       });
       router.push("/dashboard");
     } catch (err: unknown) {
@@ -79,6 +83,35 @@ export default function NewEventPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
+            <label htmlFor="event-date" className="block text-sm font-medium text-slate-300">Data do Evento</label>
+            <input
+              id="event-date"
+              type="date"
+              value={eventDate}
+              onChange={(e) => setEventDate(e.target.value)}
+              className="mt-1 block w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 [color-scheme:dark]"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="event-city" className="block text-sm font-medium text-slate-300">Cidade</label>
+            <input
+              id="event-city"
+              type="text"
+              maxLength={120}
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              className="mt-1 block w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="ex: Rio de Janeiro, RJ"
+            />
+          </div>
+        </div>
+        <p className="-mt-3 text-xs text-slate-400">
+          Opcionais, mas ajudam os participantes a encontrarem eventos públicos na busca da página inicial.
+        </p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
             <label className="block text-sm font-medium text-slate-300">Tipo de Evento</label>
             <select
               value={type}
@@ -103,8 +136,8 @@ export default function NewEventPage() {
               onChange={(e) => setVisibility(e.target.value as EventVisibility)}
               className="mt-1 block w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="PUBLIC">Pública (Livre acesso à galeria)</option>
-              <option value="PRIVATE">Privada (Exige código de acesso)</option>
+              <option value="PUBLIC">Pública (aparece na busca do site)</option>
+              <option value="PRIVATE">Privada (só por link + código)</option>
             </select>
           </div>
         </div>

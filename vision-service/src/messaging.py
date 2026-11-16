@@ -5,7 +5,7 @@ import time
 from typing import Any
 import pika
 from src.config import settings
-from src.db import insert_face_embeddings
+from src.db import close_db, insert_face_embeddings
 from src.face_engine import get_face_engine
 from src.schemas import PhotoFacesIndexedMessage, PhotoProcessedMessage
 from src.storage import download_photo
@@ -158,6 +158,7 @@ def run_consumer_loop() -> None:
                 except Exception:
                     pass
 
+    loop.run_until_complete(close_db())
     loop.close()
     logger.info("RabbitMQ consumer thread terminated.")
 

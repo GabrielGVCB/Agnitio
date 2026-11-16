@@ -37,7 +37,9 @@ public class CreateEventUseCase {
                 command.type(),
                 command.visibility(),
                 command.accessCode(),
-                command.biometricRetentionDays()
+                command.biometricRetentionDays(),
+                command.eventDate(),
+                command.city()
         );
 
         return eventRepository.save(event);
