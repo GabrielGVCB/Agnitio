@@ -1,4 +1,4 @@
-# Agnitio
+# Agnitio Teste
 
 **Agnitio** (do latim *"reconhecimento"*) é uma plataforma de fotos de eventos (corridas, casamentos, formaturas, eventos corporativos). O fotógrafo cria um evento e sobe milhares de fotos; o sistema processa as imagens em segundo plano e publica uma galeria. O participante encontra as próprias fotos exclusivamente enviando uma selfie (reconhecimento facial ético com prova de vida e conformidade LGPD). Não existe busca por número de peito.
 
