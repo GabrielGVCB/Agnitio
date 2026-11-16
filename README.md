@@ -65,6 +65,24 @@ cd frontend && npm run dev
 - **MinIO Console (S3 Storage)**: [http://localhost:9001](http://localhost:9001) (minio_admin/minio_secret_key)
 - **RabbitMQ Management**: [http://localhost:15673](http://localhost:15673) (agnitio_rabbit/rabbit_secret)
 
+## Integração Contínua (CI)
+
+O pipeline fica em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) e roda no GitHub Actions a cada **push na `main`** e em todo **pull request para a `main`**. São dois jobs independentes, executados em paralelo em `ubuntu-latest`:
+
+| Job | O que faz | Quebra o build quando |
+|---|---|---|
+| **Backend Build, ArchUnit & Integration Tests** | Configura o JDK 25 (Eclipse Temurin) com cache do Maven e executa `./mvnw -B verify` no diretório `backend/` | Falha de compilação, teste unitário (domain/application), violação de regra de camadas no ArchUnit ou teste de integração com Testcontainers (Postgres, RabbitMQ, Redis, MinIO) |
+| **Docker Compose Validation** | Executa `docker compose config --quiet` na raiz | O `docker-compose.yml` tem sintaxe ou configuração inválida |
+
+Para reproduzir localmente o que o CI verifica:
+
+```bash
+cd backend && ./mvnw -B verify   # mesmo comando do job de backend (requer Docker para os Testcontainers)
+docker compose config --quiet    # mesma validação do job de compose
+```
+
+> **Escopo atual:** o CI ainda não cobre o `vision-service` (pytest) nem o `frontend` (lint/build do Next.js). Esses testes devem ser rodados manualmente antes de abrir um PR.
+
 ## Documentação Adicional
 
 - [Arquitetura Geral](docs/architecture.md)
@@ -72,6 +90,7 @@ cd frontend && npm run dev
 - [ADR 0002: Armazenamento S3 Local com MinIO e Alternativas](docs/adr/0002-s3-local-storage-minio.md)
 - [ADR 0003: Arquitetura de Observabilidade Distribuída](docs/adr/0003-observability-stack.md)
 - [ADR 0004: Reconhecimento Facial com pgvector e Conformidade LGPD](docs/adr/0004-facial-recognition-and-pgvector.md)
+- [ADR 0005: Acesso do Participante sem Conta e Busca Pública de Eventos](docs/adr/0005-participant-access-and-public-event-search.md)
 - [Contratos de Mensagens Assíncronas](docs/contracts/README.md)
 
 ## Licença
